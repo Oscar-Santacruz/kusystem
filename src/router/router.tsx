@@ -5,6 +5,7 @@ import { WelcomePage } from '@/pages/welcome-page'
 import { ProtectedRoute } from '@/auth/ProtectedRoute'
 import { LoginPage } from '@/pages/login-page'
 import { AuthCallback } from '@/pages/auth-callback'
+import { getMainChildrenRoutes } from '@/modules/registry'
 
 export const router = createBrowserRouter([
   {
@@ -27,6 +28,7 @@ export const router = createBrowserRouter([
         ),
         children: [
           { path: 'welcome', element: <WelcomePage /> },
+          ...getMainChildrenRoutes(),
         ],
       },
     ],
