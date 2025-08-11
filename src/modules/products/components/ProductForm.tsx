@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react'
+import { useEffect, useState, useId, type JSX } from 'react'
 import { z } from 'zod'
 import type { CreateProductInput } from '@/shared/types/domain'
 
@@ -22,6 +22,7 @@ export function ProductForm(props: ProductFormProps): JSX.Element {
   const { onSubmit, pending = false, initialValues } = props
   const [values, setValues] = useState<ProductFormValues>(initialValues ?? DEFAULTS)
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormValues, string>>>({})
+  const uid = useId()
 
   const ProductSchema = z.object({
     name: z.string().trim().min(2, 'El nombre es requerido'),
@@ -65,54 +66,66 @@ export function ProductForm(props: ProductFormProps): JSX.Element {
       }}
     >
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="flex flex-col gap-1 sm:col-span-2">
+        <label className="flex flex-col gap-1 sm:col-span-2" htmlFor={`${uid}-name`}>
           <span className="text-sm text-slate-600">Nombre</span>
           <input
             className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring"
+            id={`${uid}-name`}
             value={values.name}
             onChange={(e) => handleChange('name', e.target.value)}
             placeholder="Nombre del producto"
+            aria-invalid={Boolean(errors.name)}
+            aria-describedby={errors.name ? `${uid}-name-error` : undefined}
           />
-          {errors.name ? <span className="text-xs text-red-600">{errors.name}</span> : null}
+          {errors.name ? <span id={`${uid}-name-error`} className="text-xs text-red-600">{errors.name}</span> : null}
         </label>
 
-        <label className="flex flex-col gap-1">
+        <label className="flex flex-col gap-1" htmlFor={`${uid}-sku`}>
           <span className="text-sm text-slate-600">SKU</span>
           <input
             className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring"
+            id={`${uid}-sku`}
             value={values.sku ?? ''}
             onChange={(e) => handleChange('sku', e.target.value)}
             placeholder="SKU"
+            aria-invalid={Boolean(errors.sku)}
+            aria-describedby={errors.sku ? `${uid}-sku-error` : undefined}
           />
-          {errors.sku ? <span className="text-xs text-red-600">{errors.sku}</span> : null}
+          {errors.sku ? <span id={`${uid}-sku-error`} className="text-xs text-red-600">{errors.sku}</span> : null}
         </label>
 
-        <label className="flex flex-col gap-1">
+        <label className="flex flex-col gap-1" htmlFor={`${uid}-unit`}>
           <span className="text-sm text-slate-600">Unidad</span>
           <input
             className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring"
+            id={`${uid}-unit`}
             value={values.unit ?? ''}
             onChange={(e) => handleChange('unit', e.target.value)}
             placeholder="UN"
+            aria-invalid={Boolean(errors.unit)}
+            aria-describedby={errors.unit ? `${uid}-unit-error` : undefined}
           />
-          {errors.unit ? <span className="text-xs text-red-600">{errors.unit}</span> : null}
+          {errors.unit ? <span id={`${uid}-unit-error`} className="text-xs text-red-600">{errors.unit}</span> : null}
         </label>
 
-        <label className="flex flex-col gap-1">
+        <label className="flex flex-col gap-1" htmlFor={`${uid}-price`}>
           <span className="text-sm text-slate-600">Precio</span>
           <input
             type="number"
             min={0}
             step={0.01}
             className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring"
+            id={`${uid}-price`}
             value={values.price}
             onChange={(e) => handleChange('price', Number(e.target.value))}
             placeholder="0"
+            aria-invalid={Boolean(errors.price)}
+            aria-describedby={errors.price ? `${uid}-price-error` : undefined}
           />
-          {errors.price ? <span className="text-xs text-red-600">{errors.price}</span> : null}
+          {errors.price ? <span id={`${uid}-price-error`} className="text-xs text-red-600">{errors.price}</span> : null}
         </label>
 
-        <label className="flex flex-col gap-1">
+        <label className="flex flex-col gap-1" htmlFor={`${uid}-taxRate`}>
           <span className="text-sm text-slate-600">IVA (tasa)</span>
           <input
             type="number"
@@ -120,11 +133,14 @@ export function ProductForm(props: ProductFormProps): JSX.Element {
             max={1}
             step={0.01}
             className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring"
+            id={`${uid}-taxRate`}
             value={values.taxRate ?? 0}
             onChange={(e) => handleChange('taxRate', Number(e.target.value))}
             placeholder="0.1 = 10%"
+            aria-invalid={Boolean(errors.taxRate)}
+            aria-describedby={errors.taxRate ? `${uid}-taxRate-error` : undefined}
           />
-          {errors.taxRate ? <span className="text-xs text-red-600">{errors.taxRate}</span> : null}
+          {errors.taxRate ? <span id={`${uid}-taxRate-error`} className="text-xs text-red-600">{errors.taxRate}</span> : null}
         </label>
       </div>
 
