@@ -2,10 +2,12 @@ import { type JSX } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ClientForm } from '@/modules/clients/components/ClientForm'
 import { useCreateClient } from '@/modules/clients/hooks/useClients'
+import { useToast } from '@/shared/ui/toast'
 
 export function ClientNewPage(): JSX.Element {
   const create = useCreateClient()
   const navigate = useNavigate()
+  const { success } = useToast()
 
   return (
     <div className="p-4 space-y-4">
@@ -17,7 +19,10 @@ export function ClientNewPage(): JSX.Element {
         pending={create.isPending}
         onSubmit={(vals) => {
           create.mutate(vals, {
-            onSuccess: () => navigate('/main/clients'),
+            onSuccess: () => {
+              success('Cliente creado')
+              navigate('/main/clients')
+            },
           })
         }}
       />

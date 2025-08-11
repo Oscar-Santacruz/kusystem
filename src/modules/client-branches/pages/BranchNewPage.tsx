@@ -2,11 +2,13 @@ import { type JSX } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { BranchForm } from '@/modules/client-branches/components/BranchForm'
 import { useCreateClientBranch } from '@/modules/client-branches/hooks/useClientBranches'
+import { useToast } from '@/shared/ui/toast'
 
 export function BranchNewPage(): JSX.Element {
   const { clientId } = useParams<{ clientId: string }>()
   const create = useCreateClientBranch(clientId)
   const navigate = useNavigate()
+  const { success } = useToast()
 
   return (
     <section className="space-y-4">
@@ -19,6 +21,7 @@ export function BranchNewPage(): JSX.Element {
           pending={create.isPending}
           onSubmit={async (vals) => {
             await create.mutateAsync(vals)
+            success('Sucursal creada')
             navigate(`/main/clients/${clientId}/branches`)
           }}
           onCancel={() => navigate(-1)}

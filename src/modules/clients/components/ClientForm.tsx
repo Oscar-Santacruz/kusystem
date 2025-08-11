@@ -58,6 +58,7 @@ export function ClientForm(props: ClientFormProps): JSX.Element {
       className="space-y-4"
       onSubmit={async (e) => {
         e.preventDefault()
+        e.stopPropagation()
         const result = ClientSchema.safeParse(values)
         if (!result.success) {
           const fieldErrors: Partial<Record<keyof ClientFormValues, string>> = {}

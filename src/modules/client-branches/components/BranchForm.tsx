@@ -1,4 +1,5 @@
-import { useState, type JSX } from 'react'
+import { useEffect, useState, type JSX } from 'react'
+import { z } from 'zod'
 import type { CreateClientBranchInput } from '@/shared/types/domain'
 
 export interface BranchFormValues extends Omit<CreateClientBranchInput, 'clientId'> {}
@@ -15,10 +16,24 @@ const DEFAULTS: BranchFormValues = {
   address: '',
 }
 
+const BranchSchema = z.object({
+  name: z.string().trim().min(2, 'El nombre es requerido'),
+  address: z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal(''))
+    .transform((v) => (v ? v : undefined)),
+})
+
 export function BranchForm(props: BranchFormProps): JSX.Element {
   const { initialValues, pending = false, onSubmit, onCancel } = props
   const [values, setValues] = useState<BranchFormValues>({ ...DEFAULTS, ...initialValues })
-  const [error, setError] = useState<string | null>(null)
+  const [errors, setErrors] = useState<Partial<Record<keyof BranchFormValues, string>>>({})
+
+  useEffect(() => {
+    if (initialValues) setValues((v) => ({ ...v, ...initialValues }))
+  }, [initialValues])
 
   function handleChange<K extends keyof BranchFormValues>(key: K, value: BranchFormValues[K]) {
     setValues((v) => ({ ...v, [key]: value }))
@@ -26,42 +41,48 @@ export function BranchForm(props: BranchFormProps): JSX.Element {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
-    if (!values.name?.trim()) {
-      setError('El nombre es requerido')
+    e.stopPropagation()
+    const result = BranchSchema.safeParse(values)
+    if (!result.success) {
+      const fieldErrors: Partial<Record<keyof BranchFormValues, string>> = {}
+      for (const issue of result.error.issues) {
+        const path = issue.path[0] as keyof BranchFormValues
+        if (path) fieldErrors[path] = issue.message
+      }
+      setErrors(fieldErrors)
       return
     }
-    await onSubmit({
-      name: values.name.trim(),
-      address: values.address?.toString().trim() || undefined,
-    })
+    setErrors({})
+    await onSubmit(result.data as BranchFormValues)
   }
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
-      <div className="grid gap-2">
-        <label className="text-sm font-medium" htmlFor="name">Nombre</label>
-        <input
-          id="name"
-          className="rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={values.name}
-          onChange={(e) => handleChange('name', e.target.value)}
-          placeholder="Sucursal principal"
-        />
-      </div>
+      <div className="grid gap-3">
+        <label className="flex flex-col gap-1">
+          <span className="text-sm text-slate-600">Nombre</span>
+          <input
+            id="name"
+            className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring"
+            value={values.name}
+            onChange={(e) => handleChange('name', e.target.value)}
+            placeholder="Sucursal principal"
+          />
+          {errors.name ? <span className="text-xs text-red-600">{errors.name}</span> : null}
+        </label>
 
-      <div className="grid gap-2">
-        <label className="text-sm font-medium" htmlFor="address">Dirección (opcional)</label>
-        <input
-          id="address"
-          className="rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={values.address ?? ''}
-          onChange={(e) => handleChange('address', e.target.value)}
-          placeholder="Calle 123, Ciudad"
-        />
+        <label className="flex flex-col gap-1">
+          <span className="text-sm text-slate-600">Dirección (opcional)</span>
+          <input
+            id="address"
+            className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring"
+            value={values.address ?? ''}
+            onChange={(e) => handleChange('address', e.target.value)}
+            placeholder="Calle 123, Ciudad"
+          />
+          {errors.address ? <span className="text-xs text-red-600">{errors.address}</span> : null}
+        </label>
       </div>
-
-      {error ? <div className="text-sm text-red-500">{error}</div> : null}
 
       <div className="flex items-center gap-2">
         <button

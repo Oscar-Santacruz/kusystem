@@ -2,12 +2,14 @@ import { type JSX } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ClientForm } from '@/modules/clients/components/ClientForm'
 import { useClient, useUpdateClient } from '@/modules/clients/hooks/useClients'
+import { useToast } from '@/shared/ui/toast'
 
 export function ClientEditPage(): JSX.Element {
   const { id } = useParams<{ id: string }>()
   const { data, isLoading } = useClient(id)
   const update = useUpdateClient()
   const navigate = useNavigate()
+  const { success } = useToast()
 
   if (isLoading) return <div className="p-4">Cargando…</div>
   if (!data) return <div className="p-4">No se encontró el cliente</div>
@@ -36,7 +38,10 @@ export function ClientEditPage(): JSX.Element {
         onSubmit={(vals) => {
           if (!id) return
           update.mutate({ id, input: vals }, {
-            onSuccess: () => navigate('/main/clients'),
+            onSuccess: () => {
+              success('Cliente actualizado')
+              navigate('/main/clients')
+            },
           })
         }}
       />
