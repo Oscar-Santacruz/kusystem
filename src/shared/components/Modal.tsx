@@ -57,7 +57,18 @@ export function Modal({ open, title, onClose, children, size = 'md' }: ModalProp
   if (!open) return null
   const maxW = size === 'lg' ? 'max-w-3xl' : size === 'sm' ? 'max-w-md' : 'max-w-xl'
   return createPortal(
-    <div className="fixed inset-0 z-[1000]" role="dialog" aria-modal="true" aria-labelledby={title ? titleId : undefined} aria-label={title ? undefined : title} onSubmitCapture={(e) => e.stopPropagation()}>
+    <div 
+      className="fixed inset-0 z-[1000]" 
+      role="dialog" 
+      aria-modal="true" 
+      aria-labelledby={title ? titleId : undefined} 
+      aria-label={title ? undefined : title}
+      onSubmit={(e) => {
+        // Evita que el submit burbujee al formulario padre (fuera del portal)
+        // sin bloquear el submit del formulario hijo dentro del modal
+        e.stopPropagation()
+      }}
+    >
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className="absolute inset-0 flex items-start justify-center overflow-auto p-4">
         <div
@@ -65,6 +76,10 @@ export function Modal({ open, title, onClose, children, size = 'md' }: ModalProp
           onClick={(e) => e.stopPropagation()}
           ref={panelRef}
           tabIndex={-1}
+          onSubmit={(e) => {
+            // Doble protección: detener sólo la propagación, no el comportamiento por defecto
+            e.stopPropagation()
+          }}
           onKeyDownCapture={(e) => {
             if (e.key !== 'Tab') return
             const panel = panelRef.current

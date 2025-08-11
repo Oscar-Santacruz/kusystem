@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState, type JSX } from 'react'
 import type { CreateQuoteInput, QuoteItem } from '@/modules/quotes/types'
-import { Modal } from '@/shared/components/Modal'
-import { ClientForm } from '@/modules/clients/components/ClientForm'
-import { ProductForm } from '@/modules/products/components/ProductForm'
-import { useClients, useCreateClient } from '@/modules/clients/hooks/useClients'
-import { useProducts, useCreateProduct } from '@/modules/products/hooks/useProducts'
+import { ClientCreateModal } from '@/modules/clients/components/ClientCreateModal'
+import { ProductCreateModal } from '@/modules/products/components/ProductCreateModal'
+import { useClients } from '@/modules/clients/hooks/useClients'
+import { useProducts } from '@/modules/products/hooks/useProducts'
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue'
 import { useToast } from '@/shared/ui/toast'
 
@@ -33,8 +32,6 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
   const [openClientModal, setOpenClientModal] = useState(false)
   const [openProductModal, setOpenProductModal] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
-  const createClient = useCreateClient()
-  const createProduct = useCreateProduct()
   const dClientSearch = useDebouncedValue(clientSearch, 400)
   const dProductSearch = useDebouncedValue(productSearch, 400)
   const clients = useClients({ page: 1, pageSize: 20, search: dClientSearch })
@@ -323,40 +320,29 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
     </form>
 
     {/* Modal Crear Cliente */}
-    <Modal open={openClientModal} title="Nuevo Cliente" onClose={() => setOpenClientModal(false)}>
-      <ClientForm
-        pending={createClient.isPending}
-        onSubmit={(vals) => {
-          createClient.mutate(vals, {
-            onSuccess: (c) => {
-              handleChange('customerId', (c as any).id)
-              handleChange('customerName', (c as any).name)
-              setOpenClientModal(false)
-              setClientSearch('')
-              success('Cliente creado')
-            },
-          })
-        }}
-      />
-    </Modal>
+    <ClientCreateModal
+      open={openClientModal}
+      onClose={() => setOpenClientModal(false)}
+      onSuccess={(c) => {
+        handleChange('customerId', c.id)
+        handleChange('customerName', c.name)
+        setOpenClientModal(false)
+        setClientSearch('')
+        success('Cliente creado')
+      }}
+    />
 
     {/* Modal Crear Producto */}
-    <Modal open={openProductModal} title="Nuevo Producto" onClose={() => setOpenProductModal(false)}>
-      <ProductForm
-        pending={createProduct.isPending}
-        onSubmit={(vals) => {
-          createProduct.mutate(vals, {
-            onSuccess: (p) => {
-              const prod = p as any
-              addItemFromProduct({ id: prod.id, name: prod.name, price: prod.price, taxRate: prod.taxRate })
-              setOpenProductModal(false)
-              setProductSearch('')
-              success('Producto creado')
-            },
-          })
-        }}
-      />
-    </Modal>
+    <ProductCreateModal
+      open={openProductModal}
+      onClose={() => setOpenProductModal(false)}
+      onSuccess={(p) => {
+        addItemFromProduct({ id: p.id, name: p.name, price: p.price, taxRate: p.taxRate })
+        setOpenProductModal(false)
+        setProductSearch('')
+        success('Producto creado')
+      }}
+    />
     </>
   )
 }
