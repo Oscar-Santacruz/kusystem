@@ -1,0 +1,25 @@
+# Recomendaciones Finales y Extensión
+
+- Seguridad:
+  - Aplicar RLS y políticas en backend si se expone multi-tenant.
+  - Sanitizar inputs en formularios; validar con Zod en hooks antes de enviar.
+  - No exponer secretos en frontend; usar `ApiClient.setAuthTokenProvider`.
+- UX:
+  - Añadir toasts para feedback de mutaciones (éxito/error).
+  - Skeletons en listados mientras cargan.
+  - Validaciones extra en `QuoteForm` (cantidades > 0, límites de descuento/IVA).
+- Estado:
+  - Centralizar estado de tema (dark) en un contexto.
+  - Considerar Zustand para estado UI transversal (modales/toasts).
+- Testing:
+  - Unit tests de hooks (React Query) con MSW.
+  - E2E básicos (crear cliente, sucursal, producto, presupuesto) con Playwright.
+- Rendimiento:
+  - Habilitar cacheTime y staleTime apropiados por entidad.
+  - Paginación y búsqueda server-side ya soportadas en endpoints.
+- Extensibilidad:
+  - Mantener contrato público en `shared/` y evitar imports cruzados entre módulos.
+  - Exportar módulos como paquetes independientes si se decide federar/micro-frontends.
+- Backend:
+  - Añadir filtros por `search` en `clientBranches` si aplica.
+  - Agregar `updatedAt` en respuestas y ordenaciones configurables.

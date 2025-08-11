@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { ApiInstance } from '@/services/api'
 import type { Paginated } from '@/shared/types/api'
 import type { Client, CreateClientInput, UpdateClientInput } from '@/shared/types/domain'
@@ -25,6 +25,8 @@ export function useClients(params: ListParams = { page: 1, pageSize: 20 }) {
       const data = await ApiInstance.get<Paginated<Client>>(BASE, { params: { page, pageSize, search } })
       return data
     },
+    placeholderData: keepPreviousData,
+    refetchOnWindowFocus: false,
   })
 }
 

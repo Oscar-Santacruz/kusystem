@@ -1,5 +1,5 @@
 import { type JSX } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ClientForm } from '@/modules/clients/components/ClientForm'
 import { useClient, useUpdateClient } from '@/modules/clients/hooks/useClients'
 
@@ -16,6 +16,13 @@ export function ClientEditPage(): JSX.Element {
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Editar Cliente</h1>
+        {id ? (
+          <div className="space-x-2">
+            <Link className="rounded border border-slate-300 px-3 py-1 hover:bg-slate-50" to={`/main/clients/${id}/branches`}>
+              Sucursales
+            </Link>
+          </div>
+        ) : null}
       </div>
 
       <ClientForm

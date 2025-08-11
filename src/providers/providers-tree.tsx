@@ -3,7 +3,10 @@ import { useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Auth0Provider, useAuth0 } from '@auth0/auth0-react'
 import { getEnv } from '@/config/env'
-import { ApiClient } from '@/services/api'
+import { ApiClient, ApiInstance } from '@/services/api'
+import { ThemeProvider } from '@/shared/ui/theme'
+import { ToastProvider, useToast } from '@/shared/ui/toast'
+import { ErrorBoundary } from '@/shared/ui/error-boundary'
 
 type ProvidersProps = {
   children: ReactNode
@@ -28,6 +31,20 @@ function AuthBridge({ children }: { children: ReactNode }) {
     })
   }, [getAccessTokenSilently, isAuthenticated])
   return <>{children}</>
+}
+
+function ApiErrorBridge() {
+  const { error } = useToast()
+  useEffect(() => {
+    ApiInstance.setErrorInterceptor((err: any) => {
+      // Derivar mensaje legible
+      const status = err?.response?.status
+      const serverMsg = err?.response?.data?.message || err?.message
+      const msg = status ? `${status} · ${serverMsg || 'Error de red'}` : (serverMsg || 'Error de red')
+      error(msg)
+    })
+  }, [error])
+  return null
 }
 
 export function Providers({ children }: ProvidersProps) {
@@ -68,7 +85,16 @@ export function Providers({ children }: ProvidersProps) {
         cacheLocation="localstorage"
         useRefreshTokens
       >
-        <AuthBridge>{children}</AuthBridge>
+        <AuthBridge>
+          <ThemeProvider>
+            <ToastProvider>
+              <ApiErrorBridge />
+              <ErrorBoundary>
+                {children}
+              </ErrorBoundary>
+            </ToastProvider>
+          </ThemeProvider>
+        </AuthBridge>
       </Auth0Provider>
     </QueryClientProvider>
   )

@@ -5,6 +5,7 @@ import { ClientForm } from '@/modules/clients/components/ClientForm'
 import { ProductForm } from '@/modules/products/components/ProductForm'
 import { useClients, useCreateClient } from '@/modules/clients/hooks/useClients'
 import { useProducts, useCreateProduct } from '@/modules/products/hooks/useProducts'
+import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue'
 
 export interface QuoteFormValues extends CreateQuoteInput {}
 
@@ -30,10 +31,13 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
   const [productSearch, setProductSearch] = useState('')
   const [openClientModal, setOpenClientModal] = useState(false)
   const [openProductModal, setOpenProductModal] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
   const createClient = useCreateClient()
   const createProduct = useCreateProduct()
-  const clients = useClients({ page: 1, pageSize: 20, search: clientSearch })
-  const products = useProducts({ page: 1, pageSize: 20, search: productSearch })
+  const dClientSearch = useDebouncedValue(clientSearch, 400)
+  const dProductSearch = useDebouncedValue(productSearch, 400)
+  const clients = useClients({ page: 1, pageSize: 20, search: dClientSearch })
+  const products = useProducts({ page: 1, pageSize: 20, search: dProductSearch })
 
   useEffect(() => {
     if (initialValues) setValues((v) => ({ ...v, ...initialValues }))
@@ -79,11 +83,18 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
     return { subtotal, tax, discount, total }
   }, [values.items])
 
+  const canSubmit = Boolean(values.customerId) && ((values.items?.length ?? 0) > 0)
+
   return (
     <form
       className="space-y-4"
       onSubmit={async (e) => {
         e.preventDefault()
+        setFormError(null)
+        if (!canSubmit) {
+          setFormError('Selecciona un cliente y agrega al menos un ítem.')
+          return
+        }
         await onSubmit(values)
       }}
     >
@@ -103,7 +114,9 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
           </div>
           {/* resultados */}
           <div className="max-h-40 overflow-auto rounded border border-slate-800">
-            {clients.data?.data?.length ? (
+            {clients.isPending && !clients.data ? (
+              <div className="px-3 py-2 text-sm text-slate-400">Buscando…</div>
+            ) : clients.data?.data?.length ? (
               clients.data.data.map((c) => (
                 <button
                   key={c.id}
@@ -190,7 +203,9 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
           </div>
         </div>
         <div className="max-h-40 overflow-auto rounded border border-slate-800">
-          {products.data?.data?.length ? (
+          {products.isPending && !products.data ? (
+            <div className="px-3 py-2 text-sm text-slate-400">Buscando…</div>
+          ) : products.data?.data?.length ? (
             products.data.data.map((p) => (
               <button
                 key={p.id}
@@ -293,9 +308,10 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
       </div>
 
       <div className="flex items-center gap-3">
+        {formError ? <span className="text-sm text-red-400">{formError}</span> : null}
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || !canSubmit}
           className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-500 disabled:opacity-60"
         >
           {pending ? 'Guardando…' : 'Guardar'}

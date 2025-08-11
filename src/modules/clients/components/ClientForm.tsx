@@ -1,4 +1,5 @@
 import { useEffect, useState, type JSX } from 'react'
+import { z } from 'zod'
 import type { CreateClientInput } from '@/shared/types/domain'
 
 export interface ClientFormValues extends CreateClientInput {}
@@ -16,9 +17,33 @@ const DEFAULTS: ClientFormValues = {
   email: '',
 }
 
+const ClientSchema = z.object({
+  name: z.string().trim().min(2, 'El nombre es requerido'),
+  taxId: z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal(''))
+    .transform((v) => (v ? v : undefined)),
+  phone: z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal(''))
+    .transform((v) => (v ? v : undefined)),
+  email: z
+    .string()
+    .trim()
+    .email('Email inválido')
+    .optional()
+    .or(z.literal(''))
+    .transform((v) => (v ? v : undefined)),
+})
+
 export function ClientForm(props: ClientFormProps): JSX.Element {
   const { onSubmit, pending = false, initialValues } = props
   const [values, setValues] = useState<ClientFormValues>(initialValues ?? DEFAULTS)
+  const [errors, setErrors] = useState<Partial<Record<keyof ClientFormValues, string>>>({})
 
   useEffect(() => {
     if (initialValues) setValues((v) => ({ ...v, ...initialValues }))
@@ -33,19 +58,30 @@ export function ClientForm(props: ClientFormProps): JSX.Element {
       className="space-y-4"
       onSubmit={async (e) => {
         e.preventDefault()
-        await onSubmit(values)
+        const result = ClientSchema.safeParse(values)
+        if (!result.success) {
+          const fieldErrors: Partial<Record<keyof ClientFormValues, string>> = {}
+          for (const issue of result.error.issues) {
+            const path = issue.path[0] as keyof ClientFormValues
+            if (path) fieldErrors[path] = issue.message
+          }
+          setErrors(fieldErrors)
+          return
+        }
+        setErrors({})
+        await onSubmit(result.data as ClientFormValues)
       }}
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1 sm:col-span-2">
           <span className="text-sm text-slate-600">Nombre</span>
           <input
-            required
             className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring"
             value={values.name}
             onChange={(e) => handleChange('name', e.target.value)}
             placeholder="Nombre o Razón Social"
           />
+          {errors.name ? <span className="text-xs text-red-600">{errors.name}</span> : null}
         </label>
 
         <label className="flex flex-col gap-1">
@@ -56,6 +92,7 @@ export function ClientForm(props: ClientFormProps): JSX.Element {
             onChange={(e) => handleChange('taxId', e.target.value)}
             placeholder="RUC/CI"
           />
+          {errors.taxId ? <span className="text-xs text-red-600">{errors.taxId}</span> : null}
         </label>
 
         <label className="flex flex-col gap-1">
@@ -66,6 +103,7 @@ export function ClientForm(props: ClientFormProps): JSX.Element {
             onChange={(e) => handleChange('phone', e.target.value)}
             placeholder="Teléfono"
           />
+          {errors.phone ? <span className="text-xs text-red-600">{errors.phone}</span> : null}
         </label>
 
         <label className="flex flex-col gap-1 sm:col-span-2">
@@ -77,6 +115,7 @@ export function ClientForm(props: ClientFormProps): JSX.Element {
             onChange={(e) => handleChange('email', e.target.value)}
             placeholder="correo@dominio.com"
           />
+          {errors.email ? <span className="text-xs text-red-600">{errors.email}</span> : null}
         </label>
       </div>
 

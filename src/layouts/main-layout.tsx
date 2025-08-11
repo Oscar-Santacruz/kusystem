@@ -1,6 +1,7 @@
 import { Outlet, NavLink } from 'react-router-dom'
 import { useAuth0 } from '@auth0/auth0-react'
 import { getModuleNavItems } from '@/modules/registry'
+import { ThemeToggleButton } from '@/shared/ui/theme'
 
 export function MainLayout() {
   const { user, isAuthenticated, isLoading, logout } = useAuth0()
@@ -56,7 +57,11 @@ export function MainLayout() {
 
       {/* Área de contenido en blanco */}
       <div className="flex h-dvh flex-col bg-white overflow-hidden">
-        <header className="border-b px-6 py-4 text-sm text-slate-500">&nbsp;</header>
+        <header className="border-b px-6 py-4">
+          <div className="flex items-center justify-end">
+            <ThemeToggleButton />
+          </div>
+        </header>
         <main className="flex-1 min-h-0 overflow-y-auto px-6 py-6 text-slate-900 max-w-6xl mx-auto w-full">
           <Outlet />
         </main>

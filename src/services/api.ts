@@ -22,8 +22,10 @@ export class ApiClient {
   public static getInstance(): ApiClient {
     if (!ApiClient._instance) {
       const { VITE_API_BASE_URL } = getEnv()
+      // Si no hay VITE_API_BASE_URL, usamos el backend local por defecto
+      const baseURL = VITE_API_BASE_URL || 'http://localhost:4000'
       ApiClient._instance = new ApiClient(
-        axios.create({ baseURL: VITE_API_BASE_URL })
+        axios.create({ baseURL })
       )
     }
     return ApiClient._instance
