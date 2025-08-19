@@ -17,6 +17,68 @@ export function QuoteDetailPage(): JSX.Element {
     return stripped
   }
 
+  async function handleDownloadImage(): Promise<void> {
+    const el = document.getElementById('print-sheet-detail')
+    if (!el) return
+    const html2canvas = (await import('html2canvas')).default
+    const canvas = await html2canvas(el as HTMLElement, { scale: 2, backgroundColor: '#ffffff' })
+    canvas.toBlob((blob: Blob | null) => {
+      if (!blob) return
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      const filename = `presupuesto-${onlyDigits(data?.number ?? id ?? '') || (id ?? 'sin-numero')}.png`
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    }, 'image/png')
+  }
+
+  async function handleShareWhatsApp(): Promise<void> {
+    const el = document.getElementById('print-sheet-detail')
+    if (!el) return
+    const html2canvas = (await import('html2canvas')).default
+    const canvas = await html2canvas(el as HTMLElement, { scale: 2, backgroundColor: '#ffffff' })
+    const blob: Blob | null = await new Promise((resolve) => canvas.toBlob((b: Blob | null) => resolve(b), 'image/png'))
+    const num = onlyDigits(data?.number ?? id ?? '') || (id ?? 'sin-numero')
+    const message = `Presupuesto ${num}`
+
+    try {
+      // Intento 1: Web Share API con archivos (puede requerir HTTPS / soporte del navegador)
+      if (blob && 'share' in navigator && typeof (navigator as any).share === 'function') {
+        const file = new File([blob], `presupuesto-${num}.png`, { type: 'image/png' })
+        const canShareFiles = typeof (navigator as any).canShare === 'function'
+          ? (navigator as any).canShare({ files: [file] })
+          : false
+        if (canShareFiles) {
+          await (navigator as any).share({ files: [file], text: message, title: message })
+          return
+        }
+      }
+    } catch (e) {
+      // Continuar con los siguientes intentos si falla
+    }
+
+    try {
+      // Intento 2: Copiar imagen al portapapeles y abrir WhatsApp Web con mensaje
+      if (blob && navigator.clipboard && 'write' in navigator.clipboard) {
+        const CI = (window as any).ClipboardItem || (globalThis as any).ClipboardItem
+        if (CI) {
+          const item = new CI({ 'image/png': blob })
+          await (navigator.clipboard as any).write([item])
+        }
+      }
+    } catch (_) {
+      // Si copia falla, seguimos al intento final
+    }
+
+    // Intento final: abrir WhatsApp Web con mensaje prellenado
+    const encoded = encodeURIComponent(`${message}`)
+    window.open(`https://wa.me/?text=${encoded}`, '_blank')
+  }
+
   const fmt = useMemo(() => new Intl.NumberFormat('es-PY', { useGrouping: true, minimumFractionDigits: 0, maximumFractionDigits: 0 }), [])
   function formatPYG(n?: number): string {
     return fmt.format(Number.isFinite(n as number) ? (n as number) : 0)
@@ -119,6 +181,18 @@ export function QuoteDetailPage(): JSX.Element {
             onClick={handleDownloadPdf}
           >
             Descargar PDF
+          </button>
+          <button
+            className="rounded bg-emerald-700 px-3 py-1 text-white hover:bg-emerald-600"
+            onClick={handleDownloadImage}
+          >
+            Descargar imagen
+          </button>
+          <button
+            className="rounded bg-green-700 px-3 py-1 text-white hover:bg-green-600"
+            onClick={handleShareWhatsApp}
+          >
+            Enviar por WhatsApp
           </button>
           <Link className="rounded border border-slate-600 px-3 py-1 text-slate-200 hover:bg-slate-800" to="/main/quotes">
             Volver
