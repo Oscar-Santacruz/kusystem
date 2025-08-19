@@ -1,10 +1,19 @@
 import { type JSX } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuotes, useDeleteQuote } from '@/modules/quotes/hooks/useQuotes'
+import { useToast } from '@/shared/ui/toast'
 
 export function QuotesListPage(): JSX.Element {
   const { data, isLoading, isError, refetch } = useQuotes({ page: 1, pageSize: 10 })
   const del = useDeleteQuote()
+  const { success, error } = useToast()
+
+  function onlyDigits(v: string | number | undefined | null): string {
+    if (v == null) return ''
+    const s = String(v)
+    const stripped = s.replace(/\D+/g, '')
+    return stripped
+  }
 
   return (
     <section className="space-y-6">
@@ -53,19 +62,30 @@ export function QuotesListPage(): JSX.Element {
             ) : (
               (data?.data ?? []).map((q) => (
                 <tr key={q.id} className="border-t border-slate-800/60 hover:bg-slate-800/30">
-                  <td className="px-3 py-2">{q.number ?? q.id.slice(0, 6)}</td>
+                  <td className="px-3 py-2">{onlyDigits(q.number) || q.id.slice(0, 6)}</td>
                   <td className="px-3 py-2">{q.customerName}</td>
                   <td className="px-3 py-2">{q.status ?? 'draft'}</td>
-                  <td className="px-3 py-2">{q.total ?? '-'}</td>
+                  <td className="px-3 py-2">{(() => {
+                    const n = Number(q.total)
+                    if (!Number.isFinite(n)) return '-'
+                    return n.toLocaleString('es-PY', { style: 'currency', currency: 'PYG', minimumFractionDigits: 0, maximumFractionDigits: 0 })
+                  })()}</td>
                   <td className="px-3 py-2 text-right space-x-2">
                     <Link className="text-blue-400 hover:underline" to={`/main/quotes/${q.id}`}>Ver</Link>
                     <Link className="text-amber-400 hover:underline" to={`/main/quotes/${q.id}/edit`}>Editar</Link>
                     <button
-                      className="text-red-400 hover:underline"
+                      className="text-red-400 hover:underline disabled:opacity-50"
                       disabled={del.isPending}
-                      onClick={() => {
+                      onClick={async () => {
                         if (!confirm('¿Eliminar presupuesto?')) return
-                        del.mutate(q.id, { onSuccess: () => { void refetch() } })
+                        try {
+                          await del.mutateAsync(q.id)
+                          success('Presupuesto eliminado')
+                          await refetch()
+                        } catch (e: any) {
+                          // El interceptor global ya muestra errores, pero agregamos un toast explícito
+                          error(e?.message || 'No se pudo eliminar el presupuesto')
+                        }
                       }}
                     >
                       Eliminar

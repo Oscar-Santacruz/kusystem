@@ -44,18 +44,18 @@ export function ClientsListPage(): JSX.Element {
         <input
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-          placeholder="Buscar por nombre, CUIT, email…"
+          placeholder="Buscar por nombre, RUC, email…"
           className="w-full max-w-md rounded border border-slate-300 px-3 py-2"
         />
         {(isFetching || isPending) && <span className="text-slate-500">Buscando…</span>}
       </div>
 
-      <div className="rounded border border-slate-200 bg-white/50">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-100 text-left">
+      <div className="overflow-x-auto rounded border border-slate-700/50">
+        <table className="min-w-full text-left text-sm">
+          <thead className="bg-slate-800/60 text-slate-300">
             <tr>
               <th className="px-3 py-2">Nombre</th>
-              <th className="px-3 py-2">CUIT</th>
+              <th className="px-3 py-2">RUC</th>
               <th className="px-3 py-2">Teléfono</th>
               <th className="px-3 py-2">Email</th>
               <th className="px-3 py-2 text-right">Acciones</th>
@@ -64,32 +64,38 @@ export function ClientsListPage(): JSX.Element {
           <tbody>
             {items.length === 0 ? (
               <tr>
-                <td className="px-3 py-6 text-slate-500" colSpan={5}>
+                <td className="px-3 py-6 text-center text-slate-400" colSpan={5}>
                   {isPending ? 'Cargando…' : 'Sin resultados'}
                 </td>
               </tr>
             ) : (
               items.map((c) => (
-                <tr key={c.id} className="border-t">
+                <tr key={c.id} className="border-t border-slate-800/60 hover:bg-slate-800/30">
                   <td className="px-3 py-2">{c.name}</td>
                   <td className="px-3 py-2">{c.taxId || '-'}</td>
                   <td className="px-3 py-2">{c.phone || '-'}</td>
                   <td className="px-3 py-2">{c.email || '-'}</td>
                   <td className="px-3 py-2 text-right space-x-2">
-                    <Link className="rounded border px-2 py-1 hover:bg-slate-50" to={`/main/clients/${c.id}/edit`}>
+                    <Link className="text-blue-400 hover:underline" to={`/main/clients/${c.id}/edit`}>
                       Editar
                     </Link>
-                    <Link className="rounded border px-2 py-1 hover:bg-slate-50" to={`/main/clients/${c.id}/branches`}>
+                    <Link className="text-amber-400 hover:underline" to={`/main/clients/${c.id}/branches`}>
                       Sucursales
                     </Link>
                     <button
-                      className="rounded border px-2 py-1 text-red-600 hover:bg-red-50"
-                      onClick={() => {
-                        if (confirm('¿Eliminar cliente?')) del.mutate(c.id, { onSuccess: () => success('Cliente eliminado') })
-                      }}
+                      className="text-red-400 hover:underline disabled:opacity-50"
                       disabled={del.isPending}
+                      onClick={async () => {
+                        if (!confirm('¿Eliminar cliente?')) return
+                        try {
+                          await del.mutateAsync(c.id)
+                          success('Cliente eliminado')
+                        } catch (e: any) {
+                          console.error('Error eliminando cliente:', e)
+                        }
+                      }}
                     >
-                      Borrar
+                      Eliminar
                     </button>
                   </td>
                 </tr>
