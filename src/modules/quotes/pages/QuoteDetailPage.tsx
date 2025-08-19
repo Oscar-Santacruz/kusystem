@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useQuote } from '@/modules/quotes/hooks/useQuotes'
 import { QuotePrint } from '@/modules/quotes/components/QuotePrint'
 import { useReactToPrint } from 'react-to-print'
+import { FaEdit, FaPrint, FaFilePdf, FaImage, FaWhatsapp, FaArrowLeft } from 'react-icons/fa'
 
 export function QuoteDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>()
@@ -74,9 +75,12 @@ export function QuoteDetailPage(): JSX.Element {
       // Si copia falla, seguimos al intento final
     }
 
-    // Intento final: abrir WhatsApp Web con mensaje prellenado
+    // Abrir WhatsApp Web con número opcional
+    const phoneInput = prompt('Enviar a WhatsApp. Ingrese número con código de país (ej: 5959xxxxxxx). Deje vacío para elegir contacto en WhatsApp Web:')
+    const phone = phoneInput ? onlyDigits(phoneInput) : ''
     const encoded = encodeURIComponent(`${message}`)
-    window.open(`https://wa.me/?text=${encoded}`, '_blank')
+    const url = phone ? `https://wa.me/${phone}?text=${encoded}` : `https://wa.me/?text=${encoded}`
+    window.open(url, '_blank')
   }
 
   const fmt = useMemo(() => new Intl.NumberFormat('es-PY', { useGrouping: true, minimumFractionDigits: 0, maximumFractionDigits: 0 }), [])
@@ -166,36 +170,65 @@ export function QuoteDetailPage(): JSX.Element {
     <section className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-1xl font-semibold">Presupuesto #{onlyDigits(data?.number) || id?.slice(0, 6)}</h2>
-        <div className="space-x-2">
-          <Link className="rounded bg-slate-700 px-3 py-1 text-white hover:bg-slate-600" to={`/main/quotes/${id}/edit`}>
-            Editar
+        <div className="flex items-center gap-2">
+          <Link
+            to={`/main/quotes/${id}/edit`}
+            className="inline-flex items-center justify-center rounded bg-slate-700 text-white hover:bg-slate-600 h-9 w-9"
+            aria-label="Editar"
+            title="Editar"
+          >
+            <FaEdit className="h-5 w-5" aria-hidden="true" />
+            <span className="sr-only">Editar</span>
           </Link>
+
           <button
-            className="rounded bg-slate-900 px-3 py-1 text-white hover:bg-slate-800"
+            className="inline-flex items-center justify-center rounded bg-slate-900 text-white hover:bg-slate-800 h-9 w-9"
             onClick={handlePrint}
+            aria-label="Imprimir"
+            title="Imprimir"
           >
-            Imprimir
+            <FaPrint className="h-5 w-5" aria-hidden="true" />
+            <span className="sr-only">Imprimir</span>
           </button>
+
           <button
-            className="rounded bg-blue-700 px-3 py-1 text-white hover:bg-blue-600"
+            className="inline-flex items-center justify-center rounded bg-blue-700 text-white hover:bg-blue-600 h-9 w-9"
             onClick={handleDownloadPdf}
+            aria-label="Descargar PDF"
+            title="Descargar PDF"
           >
-            Descargar PDF
+            <FaFilePdf className="h-5 w-5" aria-hidden="true" />
+            <span className="sr-only">Descargar PDF</span>
           </button>
+
           <button
-            className="rounded bg-emerald-700 px-3 py-1 text-white hover:bg-emerald-600"
+            className="inline-flex items-center justify-center rounded bg-emerald-700 text-white hover:bg-emerald-600 h-9 w-9"
             onClick={handleDownloadImage}
+            aria-label="Descargar imagen"
+            title="Descargar imagen"
           >
-            Descargar imagen
+            <FaImage className="h-5 w-5" aria-hidden="true" />
+            <span className="sr-only">Descargar imagen</span>
           </button>
+
           <button
-            className="rounded bg-green-700 px-3 py-1 text-white hover:bg-green-600"
+            className="inline-flex items-center justify-center rounded bg-green-700 text-white hover:bg-green-600 h-9 w-9"
             onClick={handleShareWhatsApp}
+            aria-label="Enviar por WhatsApp"
+            title="Enviar por WhatsApp"
           >
-            Enviar por WhatsApp
+            <FaWhatsapp className="h-5 w-5" aria-hidden="true" />
+            <span className="sr-only">Enviar por WhatsApp</span>
           </button>
-          <Link className="rounded border border-slate-600 px-3 py-1 text-slate-200 hover:bg-slate-800" to="/main/quotes">
-            Volver
+
+          <Link
+            to="/main/quotes"
+            className="inline-flex items-center justify-center rounded border border-slate-600 text-slate-200 hover:bg-slate-800 h-9 w-9"
+            aria-label="Volver"
+            title="Volver"
+          >
+            <FaArrowLeft className="h-5 w-5" aria-hidden="true" />
+            <span className="sr-only">Volver</span>
           </Link>
         </div>
       </div>
