@@ -51,9 +51,9 @@ export function ProductsListPage(): JSX.Element {
         {(isFetching || isPending) && <span className="text-slate-500">Buscando…</span>}
       </div>
 
-      <div className="rounded border border-slate-200 bg-white/50">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-100 text-left">
+      <div className="overflow-x-auto rounded border border-slate-700/50">
+        <table className="min-w-full text-left text-sm">
+          <thead className="bg-slate-800/60 text-slate-300">
             <tr>
               <th className="px-3 py-2">Nombre</th>
               <th className="px-3 py-2">SKU</th>
@@ -66,30 +66,45 @@ export function ProductsListPage(): JSX.Element {
           <tbody>
             {items.length === 0 ? (
               <tr>
-                <td className="px-3 py-6 text-slate-500" colSpan={6}>
+                <td className="px-3 py-6 text-center text-slate-400" colSpan={6}>
                   {isPending ? 'Cargando…' : 'Sin resultados'}
                 </td>
               </tr>
             ) : (
               items.map((p) => (
-                <tr key={p.id} className="border-t">
+                <tr key={p.id} className="border-t border-slate-800/60 hover:bg-slate-800/30">
                   <td className="px-3 py-2">{p.name}</td>
-                  <td className="px-3 py-2">{p.sku || '-'}</td>
+                  <td className="px-3 py-2">{(() => {
+                    const s = p.sku
+                    if (!s) return '-'
+                    const n = Number(s)
+                    return Number.isFinite(n) ? n.toLocaleString('es-PY') : s
+                  })()}</td>
                   <td className="px-3 py-2">{p.unit || '-'}</td>
-                  <td className="px-3 py-2">{p.price.toLocaleString(undefined, { style: 'currency', currency: 'ARS' })}</td>
-                  <td className="px-3 py-2">{p.taxRate ?? 0}</td>
+                  <td className="px-3 py-2">{p.price.toLocaleString('es-PY', { style: 'currency', currency: 'PYG', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</td>
+                  <td className="px-3 py-2">{(() => {
+                    const r = Number(p.taxRate ?? 0)
+                    const pct = Math.round(r > 1 ? r : r * 100)
+                    return `${pct}%`
+                  })()}</td>
                   <td className="px-3 py-2 text-right space-x-2">
-                    <Link className="rounded border px-2 py-1 hover:bg-slate-50" to={`/main/products/${p.id}/edit`}>
+                    <Link className="text-blue-400 hover:underline" to={`/main/products/${p.id}/edit`}>
                       Editar
                     </Link>
                     <button
-                      className="rounded border px-2 py-1 text-red-600 hover:bg-red-50"
-                      onClick={() => {
-                        if (confirm('¿Eliminar producto?')) del.mutate(p.id, { onSuccess: () => success('Producto eliminado') })
-                      }}
+                      className="text-red-400 hover:underline disabled:opacity-50"
                       disabled={del.isPending}
+                      onClick={async () => {
+                        if (!confirm('¿Eliminar producto?')) return
+                        try {
+                          await del.mutateAsync(p.id)
+                          success('Producto eliminado')
+                        } catch (e: any) {
+                          console.error('Error eliminando producto:', e)
+                        }
+                      }}
                     >
-                      Borrar
+                      Eliminar
                     </button>
                   </td>
                 </tr>
