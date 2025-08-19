@@ -51,6 +51,9 @@ export function QuoteEditPage(): JSX.Element {
           currency: data.currency,
           notes: data.notes,
           items: data.items,
+          branchId: data.branchId,
+          branchName: data.branchName,
+          additionalCharges: data.additionalCharges ?? [],
         }}
         pending={update.isPending}
         onSubmit={(values) => {

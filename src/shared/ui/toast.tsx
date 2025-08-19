@@ -1,4 +1,6 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react'
+import { Toaster as SonnerToaster, toast as sonner } from 'sonner'
+import { useTheme } from '@/shared/ui/theme'
 
 export type ToastType = 'success' | 'error' | 'info'
 
@@ -20,36 +22,36 @@ interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue | null>(null)
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toasts, setToasts] = useState<Toast[]>([])
-  const timers = useRef<Map<string, number>>(new Map())
+  const { theme } = useTheme()
 
-  const remove = useCallback((id: string) => {
-    setToasts((list) => list.filter((t) => t.id !== id))
-    const timerId = timers.current.get(id)
-    if (timerId) {
-      window.clearTimeout(timerId)
-      timers.current.delete(id)
+  const show = useCallback((t: Omit<Toast, 'id'>) => {
+    const { title, description, type = 'info', durationMs } = t
+    const opts = { description, duration: durationMs, closeButton: true } as const
+    if (type === 'success') {
+      sonner.success(title ?? '', opts)
+    } else if (type === 'error') {
+      sonner.error(title ?? '', opts)
+    } else {
+      sonner(title ?? '', opts)
     }
   }, [])
 
-  const show = useCallback((t: Omit<Toast, 'id'>) => {
-    const id = crypto.randomUUID()
-    const toast: Toast = { id, durationMs: 3000, type: 'info', ...t }
-    setToasts((list) => [...list, toast])
-    const tid = window.setTimeout(() => remove(id), toast.durationMs)
-    timers.current.set(id, tid)
-  }, [remove])
-
-  const success = useCallback((msg: string, opts?: Partial<Toast>) => show({ title: msg, type: 'success', ...opts }), [show])
-  const error = useCallback((msg: string, opts?: Partial<Toast>) => show({ title: msg, type: 'error', ...opts }), [show])
-  const info = useCallback((msg: string, opts?: Partial<Toast>) => show({ title: msg, type: 'info', ...opts }), [show])
+  const success = useCallback((msg: string, opts?: Partial<Toast>) => {
+    sonner.success(msg, { description: opts?.description, duration: opts?.durationMs, closeButton: true })
+  }, [])
+  const error = useCallback((msg: string, opts?: Partial<Toast>) => {
+    sonner.error(msg, { description: opts?.description, duration: opts?.durationMs, closeButton: true })
+  }, [])
+  const info = useCallback((msg: string, opts?: Partial<Toast>) => {
+    sonner(msg, { description: opts?.description, duration: opts?.durationMs, closeButton: true })
+  }, [])
 
   const value = useMemo(() => ({ show, success, error, info }), [show, success, error, info])
 
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <Toaster toasts={toasts} onClose={remove} />
+      <SonnerToaster position="top-right" richColors closeButton theme={theme} />
     </ToastContext.Provider>
   )
 }
@@ -60,37 +62,4 @@ export function useToast() {
   return ctx
 }
 
-function classNames(...list: Array<string | false | null | undefined>) {
-  return list.filter(Boolean).join(' ')
-}
-
-export function Toaster({ toasts, onClose }: { toasts: Toast[]; onClose: (id: string) => void }) {
-  return (
-    <div className="pointer-events-none fixed right-4 top-4 z-50 flex w-[360px] max-w-[90vw] flex-col gap-2">
-      {toasts.map((t) => (
-        <div
-          key={t.id}
-          className={classNames(
-            'pointer-events-auto rounded border px-3 py-2 shadow-sm',
-            t.type === 'success' && 'border-emerald-300 bg-emerald-50 text-emerald-900',
-            t.type === 'error' && 'border-red-300 bg-red-50 text-red-900',
-            t.type === 'info' && 'border-slate-300 bg-white text-slate-900',
-          )}
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1">
-              <div className="text-sm font-medium">{t.title}</div>
-              {t.description ? <div className="text-xs text-slate-600">{t.description}</div> : null}
-            </div>
-            <button
-              className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-              onClick={() => onClose(t.id)}
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
+// Sonner renderizado desde el Provider. No se exporta un Toaster propio.

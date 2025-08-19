@@ -1,9 +1,13 @@
 export function WelcomePage() {
   return (
     <section className="space-y-4">
-      <h2 className="text-3xl font-bold">Hola Mundo</h2>
       <p className="text-slate-300">
-        Proyecto unificado kuSystem listo para crecer y separarse en módulos cuando lo necesitemos.
+        Módulo de Presupuestos: crea y edita presupuestos con numeración automática, selección de cliente y
+        sucursal, carga de productos con cantidades y precios, cálculo de subtotales y totales incluyendo
+        cargos adicionales (por ejemplo, transporte e instalación), gestión de notas con opción «Mostrar en PDF»,
+        vista imprimible en formato A4, impresión directa y descarga en PDF. El sistema formatea montos en PYG,
+        maneja fechas en zona local para evitar desfases y permite reutilizar un diseño de impresión consistente
+        en todo el flujo.
       </p>
     </section>
   )

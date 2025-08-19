@@ -6,6 +6,8 @@ const envSchema = z.object({
   VITE_AUTH0_CLIENT_ID: z.string().min(1),
   VITE_AUTH0_AUDIENCE: z.string().optional(),
   VITE_AUTH0_CALLBACK_URL: z.string().url().optional(),
+  // Permite desactivar Auth0 temporalmente ("true"/"false")
+  VITE_AUTH_DISABLED: z.enum(['true', 'false']).optional(),
 })
 
 export interface AppEnv {
@@ -14,6 +16,7 @@ export interface AppEnv {
   VITE_AUTH0_CLIENT_ID: string
   VITE_AUTH0_AUDIENCE?: string
   VITE_AUTH0_CALLBACK_URL?: string
+  VITE_AUTH_DISABLED?: 'true' | 'false'
 }
 
 export function getEnv(): AppEnv {
@@ -33,6 +36,7 @@ export function getEnv(): AppEnv {
     VITE_AUTH0_AUDIENCE: env.VITE_AUTH0_AUDIENCE,
     VITE_AUTH0_CALLBACK_URL: env.VITE_AUTH0_CALLBACK_URL,
     VITE_API_BASE_URL: env.VITE_API_BASE_URL,
+    VITE_AUTH_DISABLED: env.VITE_AUTH_DISABLED,
   })
   return env
 }

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
-export type Theme = 'light' | 'dark'
+export type Theme = 'dark'
 
 interface ThemeContextValue {
   theme: Theme
@@ -10,28 +10,25 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
-function applyTheme(theme: Theme) {
+function applyThemeDark() {
   const root = document.documentElement
-  if (theme === 'dark') root.classList.add('dark')
-  else root.classList.remove('dark')
+  root.classList.add('dark')
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    const stored = window.localStorage.getItem('theme') as Theme | null
-    if (stored === 'dark' || stored === 'light') return stored
-    // prefer user media
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-    return prefersDark ? 'dark' : 'light'
-  })
+  // Fijar siempre en oscuro
+  const [theme] = useState<Theme>('dark')
 
   useEffect(() => {
-    applyTheme(theme)
-    window.localStorage.setItem('theme', theme)
-  }, [theme])
+    applyThemeDark()
+  }, [])
 
-  const setTheme = (t: Theme) => setThemeState(t)
-  const toggle = () => setThemeState((t) => (t === 'dark' ? 'light' : 'dark'))
+  const setTheme = (_t: Theme) => {
+    // noop: no permitimos cambiar
+  }
+  const toggle = () => {
+    // noop: no permitimos cambiar
+  }
 
   const value = useMemo(() => ({ theme, setTheme, toggle }), [theme])
 
@@ -45,15 +42,6 @@ export function useTheme() {
 }
 
 export function ThemeToggleButton() {
-  const { theme, toggle } = useTheme()
-  return (
-    <button
-      aria-label="Cambiar tema"
-      className="inline-flex items-center gap-2 rounded border px-2 py-1 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
-      onClick={toggle}
-      title={theme === 'dark' ? 'Cambiar a claro' : 'Cambiar a oscuro'}
-    >
-      <span className="text-slate-600 dark:text-slate-200">{theme === 'dark' ? 'Oscuro' : 'Claro'}</span>
-    </button>
-  )
+  // Eliminado el cambio de tema: no renderizar botón
+  return null
 }

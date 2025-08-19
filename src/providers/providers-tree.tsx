@@ -49,6 +49,8 @@ function ApiErrorBridge() {
 
 export function Providers({ children }: ProvidersProps) {
   const env = getEnv()
+  const authDisabled = env.VITE_AUTH_DISABLED === 'true'
+  const insecureOrigin = typeof window !== 'undefined' && window.location && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost'
   const domain = env.VITE_AUTH0_DOMAIN || ''
   const clientId = env.VITE_AUTH0_CLIENT_ID || ''
   const audience = env.VITE_AUTH0_AUDIENCE
@@ -63,9 +65,26 @@ export function Providers({ children }: ProvidersProps) {
     clientId,
     audience,
     redirectUri,
+    authDisabled,
+    insecureOrigin,
   })
-  if (!domain || !clientId) {
-    console.warn('[auth0] domain o clientId vacíos. Revisa tu .env y reinicia el dev server.')
+  if (authDisabled || insecureOrigin || !domain || !clientId) {
+    // Bypass completo de Auth0: no montamos el provider y limpiamos el token provider
+    useEffect(() => {
+      ApiClient.setAuthTokenProvider(async () => null)
+    }, [])
+    return (
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <ToastProvider>
+            <ApiErrorBridge />
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
+          </ToastProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    )
   }
 
   return (
