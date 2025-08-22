@@ -72,6 +72,19 @@ export function useQuote(id: string | undefined) {
   })
 }
 
+// Obtiene una cotización pública por su publicId desde el endpoint público
+export function usePublicQuote(publicId: string | undefined) {
+  return useQuery({
+    queryKey: publicId ? [...keys.all, 'public', publicId] : [...keys.all, 'public', 'unknown'],
+    queryFn: async () => {
+      if (!publicId) throw new Error('publicId requerido')
+      const data = await ApiInstance.get<Quote>(`/public/quotes/${publicId}`)
+      return data
+    },
+    enabled: Boolean(publicId),
+  })
+}
+
 export function useCreateQuote() {
   const qc = useQueryClient()
   return useMutation({

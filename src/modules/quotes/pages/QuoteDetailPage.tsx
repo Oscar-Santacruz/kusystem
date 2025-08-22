@@ -3,7 +3,9 @@ import { Link, useParams } from 'react-router-dom'
 import { useQuote } from '@/modules/quotes/hooks/useQuotes'
 import { QuotePrint } from '@/modules/quotes/components/QuotePrint'
 import { useReactToPrint } from 'react-to-print'
-import { FaEdit, FaPrint, FaFilePdf, FaImage, FaWhatsapp, FaArrowLeft } from 'react-icons/fa'
+import { FaEdit, FaPrint, FaFilePdf, FaImage, FaWhatsapp, FaArrowLeft, FaLink } from 'react-icons/fa'
+import { getPublicQuoteUrl } from '@/modules/quotes/utils/public-url'
+import { toast } from 'sonner'
 
 export function QuoteDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>()
@@ -16,6 +18,18 @@ export function QuoteDetailPage(): JSX.Element {
     const s = String(v)
     const stripped = s.replace(/\D+/g, '')
     return stripped
+  }
+
+  async function handleCopyPublicLink(): Promise<void> {
+    try {
+      if (!data) return
+      const url = getPublicQuoteUrl(data as any)
+      await navigator.clipboard.writeText(url)
+      toast.success('Enlace público copiado al portapapeles')
+    } catch (e) {
+      console.error(e)
+      toast.error('No se pudo copiar el enlace')
+    }
   }
 
   async function handleDownloadImage(): Promise<void> {
@@ -219,6 +233,16 @@ export function QuoteDetailPage(): JSX.Element {
           >
             <FaWhatsapp className="h-5 w-5" aria-hidden="true" />
             <span className="sr-only">Enviar por WhatsApp</span>
+          </button>
+
+          <button
+            className="inline-flex items-center justify-center rounded bg-slate-700 text-white hover:bg-slate-600 h-9 w-9"
+            onClick={handleCopyPublicLink}
+            aria-label="Copiar enlace público"
+            title="Copiar enlace público"
+          >
+            <FaLink className="h-5 w-5" aria-hidden="true" />
+            <span className="sr-only">Copiar enlace público</span>
           </button>
 
           <Link

@@ -46,6 +46,9 @@ export interface Quote {
   total?: number
   createdAt?: string
   updatedAt?: string
+  // Enlace público (MVP opcional, backend futuro)
+  publicId?: string
+  publicEnabled?: boolean
 }
 
 export interface CreateQuoteInput {

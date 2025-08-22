@@ -481,9 +481,6 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
             onChange={(e) => handleChange('currency', e.target.value)}
           >
             <option value="PYG">PYG</option>
-            <option value="USD">USD</option>
-            <option value="ARS">ARS</option>
-            <option value="EUR">EUR</option>
           </select>
         </label>
 

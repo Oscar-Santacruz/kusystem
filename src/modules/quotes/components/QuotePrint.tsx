@@ -1,6 +1,8 @@
 import { forwardRef, useMemo } from 'react'
 import logo from '@/assets/logo.png'
 import type { Quote } from '@/modules/quotes/types'
+import QRCode from 'react-qr-code'
+import { getPublicQuoteUrl } from '@/modules/quotes/utils/public-url'
 
 function onlyDigits(v: string | number | undefined | null): string {
   if (v == null) return ''
@@ -83,15 +85,34 @@ export const QuotePrint = forwardRef<HTMLDivElement, QuotePrintProps>(function Q
     }
   }, [data])
 
+  const publicUrl = useMemo(() => {
+    try {
+      return getPublicQuoteUrl(data as any)
+    } catch {
+      return ''
+    }
+  }, [data?.id, (data as any)?.publicId])
+
   return (
-    <div id={id} ref={ref} className={['mx-auto w-[210mm] max-w-full bg-white p-8 shadow print:shadow-none', className].filter(Boolean).join(' ')}>
+    <div
+      id={id}
+      ref={ref}
+      className={[
+        'mx-auto w-[210mm] max-w-full bg-white p-8 shadow print:shadow-none',
+        // Borde y color en HEX para evitar oklch
+        'border-l-8 border-[#cbd5e1]',
+        // Forzar texto negro en todo el documento imprimible
+        'text-black',
+        className,
+      ].filter(Boolean).join(' ')}
+    >
       {/* Encabezado */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
           <img src={logo} alt="Santacruz Publicidad" className="h-32 w-80 object-contain" />
         </div>
         <div className="text-right">
-          <div className="no-print-shadow text-4xl font-black tracking-wide text-slate-800" style={{textShadow: '0 1px 0 #bbb, 0 2px 0 #aaa, 0 3px 0 #999, 0 4px 0 #888, 0 5px 0 #777'}}>
+          <div className="no-print-shadow text-4xl font-black tracking-wide text-black" style={{textShadow: '0 1px 0 #bbb, 0 2px 0 #aaa, 0 3px 0 #999, 0 4px 0 #888, 0 5px 0 #777'}}>
             PRESUPUESTO
           </div>
           <div className="mt-2 text-2xl font-bold">N° {onlyDigits(data.number) || data.id.slice(0, 6)}</div>
@@ -108,13 +129,13 @@ export const QuotePrint = forwardRef<HTMLDivElement, QuotePrintProps>(function Q
       {/* Cliente */}
       <div className="mt-6 grid grid-cols-2 gap-4">
         <div>
-          <div className="text-lg font-semibold text-slate-500" style={{textShadow: '0 1px 0 #d1d5db'}}>Señores:</div>
-          <div className="text-2xl font-extrabold text-slate-700">
+          <div className="text-lg font-semibold text-black" style={{textShadow: '0 1px 0 #d1d5db'}}>Señores:</div>
+          <div className="text-2xl font-extrabold text-black">
             {data.customerName}
           </div>
         </div>
         <div className="text-right">
-        <div className="text-lg font-semibold text-slate-700">
+        <div className="text-lg font-semibold text-black">
         Estación de Servicio  : {data.branchName || '—'}
       </div>
         </div>
@@ -125,12 +146,12 @@ export const QuotePrint = forwardRef<HTMLDivElement, QuotePrintProps>(function Q
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr>
-              <th className="border-2 border-slate-400 px-2 py-1 text-left">item</th>
-              <th className="border-2 border-slate-400 px-2 py-1 text-left text-lg font-semibold">Descripcion</th>
-              <th className="border-2 border-slate-400 px-2 py-1 text-center">un</th>
-              <th className="border-2 border-slate-400 px-2 py-1 text-right">Cantidad</th>
-              <th className="border-2 border-slate-400 px-2 py-1 text-right">P. unitario</th>
-              <th className="border-2 border-slate-400 px-2 py-1 text-right">Precio total</th>
+              <th className="border-2 border-[#94a3b8] px-2 py-1 text-left">item</th>
+              <th className="border-2 border-[#94a3b8] px-2 py-1 text-left text-lg font-semibold">Descripcion</th>
+              <th className="border-2 border-[#94a3b8] px-2 py-1 text-center">un</th>
+              <th className="border-2 border-[#94a3b8] px-2 py-1 text-right">Cantidad</th>
+              <th className="border-2 border-[#94a3b8] px-2 py-1 text-right">P. unitario</th>
+              <th className="border-2 border-[#94a3b8] px-2 py-1 text-right">Precio total</th>
             </tr>
           </thead>
           <tbody>
@@ -138,24 +159,24 @@ export const QuotePrint = forwardRef<HTMLDivElement, QuotePrintProps>(function Q
               const lineTotal = it.quantity * it.unitPrice - (it.discount ?? 0)
               return (
                 <tr key={idx}>
-                  <td className="border border-slate-300 px-2 py-1 align-top">{idx + 1}</td>
-                  <td className="border border-slate-300 px-2 py-1 align-top uppercase">{it.description}</td>
-                  <td className="border border-slate-300 px-2 py-1 text-center align-top">UN</td>
-                  <td className="border border-slate-300 px-2 py-1 text-right align-top">{formatQty0(it.quantity)}</td>
-                  <td className="border border-slate-300 px-2 py-1 text-right align-top">{formatCurrency0(it.unitPrice, data.currency)}</td>
-                  <td className="border border-slate-300 px-2 py-1 text-right align-top">{formatCurrency0(lineTotal, data.currency)}</td>
+                  <td className="border border-[#cbd5e1] px-2 py-1 align-top">{idx + 1}</td>
+                  <td className="border border-[#cbd5e1] px-2 py-1 align-top uppercase">{it.description}</td>
+                  <td className="border border-[#cbd5e1] px-2 py-1 text-center align-top">UN</td>
+                  <td className="border border-[#cbd5e1] px-2 py-1 text-right align-top">{formatQty0(it.quantity)}</td>
+                  <td className="border border-[#cbd5e1] px-2 py-1 text-right align-top">{formatCurrency0(it.unitPrice, data.currency)}</td>
+                  <td className="border border-[#cbd5e1] px-2 py-1 text-right align-top">{formatCurrency0(lineTotal, data.currency)}</td>
                 </tr>
               )
             })}
             {data.items.length < 4
               ? Array.from({ length: 4 - data.items.length }).map((_, i) => (
                   <tr key={`empty-${i}`}>
-                    <td className="border border-slate-300 px-2 py-6 align-top">&nbsp;</td>
-                    <td className="border border-slate-300 px-2 py-6 align-top">&nbsp;</td>
-                    <td className="border border-slate-300 px-2 py-6" />
-                    <td className="border border-slate-300 px-2 py-6" />
-                    <td className="border border-slate-300 px-2 py-6" />
-                    <td className="border border-slate-300 px-2 py-6" />
+                    <td className="border border-[#cbd5e1] px-2 py-6 align-top">&nbsp;</td>
+                    <td className="border border-[#cbd5e1] px-2 py-6 align-top">&nbsp;</td>
+                    <td className="border border-[#cbd5e1] px-2 py-6" />
+                    <td className="border border-[#cbd5e1] px-2 py-6" />
+                    <td className="border border-[#cbd5e1] px-2 py-6" />
+                    <td className="border border-[#cbd5e1] px-2 py-6" />
                   </tr>
                 ))
               : null}
@@ -163,48 +184,54 @@ export const QuotePrint = forwardRef<HTMLDivElement, QuotePrintProps>(function Q
         </table>
       </div>
 
-      {/* Totales */}
-      <div className="mt-4 grid grid-cols-2 gap-4">
-        <div />
-        <div className="justify-self-end w-80">
-          <div className="flex justify-between border-b border-slate-400 py-1">
-            <span>SUB-TOTAL</span>
-            <span>{formatCurrency0(computed.subtotal, data.currency)}</span>
-          </div>
-          <div className="flex justify-between border-b border-slate-400 py-1">
-            <span>IVA</span>
-            <span>{formatCurrency0(computed.tax, data.currency)}</span>
-          </div>
-          {computed.chargesList.length > 0 ? (
-            <div className="border-b border-slate-400 py-1">
-              <ul className="mt-1 divide-y divide-slate-200 rounded border border-slate-300 bg-white p-2 text-slate-800">
-                {computed.chargesList.map((c, idx) => (
-                  <li key={idx} className="flex items-center justify-between py-1">
-                    <span>{chargeLabel((c as any).type)}</span>
-                    <span>{formatCurrency0((c as any).amount ?? 0, data.currency)}</span>
-                  </li>
-                ))}
-              </ul>
+      {/* Totales + QR en la misma fila */}
+      <div className="mt-4 grid grid-cols-2 gap-4 items-end">
+        {/* QR alineado a la izquierda, a la misma altura del resumen */}
+        <div className="self-end">
+          {publicUrl ? (
+            <div className="justify-self-start" style={{ background: '#ffffff', padding: '12px' }}>
+              <QRCode value={publicUrl} size={160} bgColor="#FFFFFF" fgColor="#000000" />
             </div>
           ) : null}
-          {computed.discount ? (
-            <div className="flex justify-between border-b border-slate-400 py-1">
-              <span>DESCUENTO</span>
-              <span>-{formatCurrency0(computed.discount, data.currency)}</span>
+        </div>
+        {/* Resumen de precios */}
+        <div className="justify-self-end w-[300px] rounded border border-[#cbd5e1] bg-white text-black">
+          <div className="px-3 py-2">
+            <div className="flex justify-between border-b border-[#cbd5e1] py-1">
+              <span>SUB-TOTAL</span>
+              <span>{formatCurrency0(computed.subtotal, data.currency)}</span>
             </div>
-          ) : null}
-          <div className="mt-1 flex justify-between font-bold">
-            <span>TOTAL GUARANIES</span>
-            <span>{formatCurrency0(computed.total, data.currency)}</span>
+            <div className="flex justify-between border-b border-[#cbd5e1] py-1">
+              <span>IVA</span>
+              <span>{formatCurrency0(computed.tax, data.currency)}</span>
+            </div>
+            {computed.chargesList.map((c, idx) => (
+              <div key={idx} className="flex justify-between border-b border-[#cbd5e1] py-1">
+                <span>{chargeLabel((c as any).type)}</span>
+                <span>{formatCurrency0((c as any).amount ?? 0, data.currency)}</span>
+              </div>
+            ))}
+            {computed.discount ? (
+              <div className="flex justify-between border-b border-[#cbd5e1] py-1">
+                <span>DESCUENTO</span>
+                <span>-{formatCurrency0(computed.discount, data.currency)}</span>
+              </div>
+            ) : null}
+            <div className="mt-1 flex justify-between font-bold">
+              <span>TOTAL GUARANIES</span>
+              <span>{formatCurrency0(computed.total, data.currency)}</span>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* QR movido junto al resumen en la fila anterior */}
 
       {/* Observaciones (sin lista de cargos en pie de página) */}
       {(data.printNotes ?? true) && data.notes ? (
         <div className="mt-6 text-sm">
           <div>
-            <div className="text-slate-500">Observaciones</div>
+            <div className="text-black">Observaciones</div>
             <div className="whitespace-pre-wrap">{data.notes}</div>
           </div>
         </div>

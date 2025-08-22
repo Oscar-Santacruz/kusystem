@@ -8,6 +8,8 @@ const envSchema = z.object({
   VITE_AUTH0_CALLBACK_URL: z.string().url().optional(),
   // Permite desactivar Auth0 temporalmente ("true"/"false")
   VITE_AUTH_DISABLED: z.enum(['true', 'false']).optional(),
+  // URL pública base para construir enlaces de presupuestos (p. ej. http://181.123.91.8:4000)
+  VITE_PUBLIC_APP_URL: z.string().url().optional(),
 })
 
 export interface AppEnv {
@@ -17,6 +19,7 @@ export interface AppEnv {
   VITE_AUTH0_AUDIENCE?: string
   VITE_AUTH0_CALLBACK_URL?: string
   VITE_AUTH_DISABLED?: 'true' | 'false'
+  VITE_PUBLIC_APP_URL?: string
 }
 
 export function getEnv(): AppEnv {
@@ -37,6 +40,7 @@ export function getEnv(): AppEnv {
     VITE_AUTH0_CALLBACK_URL: env.VITE_AUTH0_CALLBACK_URL,
     VITE_API_BASE_URL: env.VITE_API_BASE_URL,
     VITE_AUTH_DISABLED: env.VITE_AUTH_DISABLED,
+    VITE_PUBLIC_APP_URL: env.VITE_PUBLIC_APP_URL,
   })
   return env
 }
