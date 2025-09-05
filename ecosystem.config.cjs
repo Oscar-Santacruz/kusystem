@@ -4,7 +4,7 @@ module.exports = {
       name: "kusystem-frontend",
       cwd: __dirname,
       script: "node",
-      args: "./node_modules/vite/bin/vite.js dev",
+      args: "./node_modules/vite/bin/vite.js dev --port 5174",
       interpreter: "none",
       windowsHide: true,
       autorestart: true,

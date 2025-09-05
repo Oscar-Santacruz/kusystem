@@ -17,12 +17,14 @@ export default defineConfig({
     host: true,
     port: 5173,
     strictPort: true,
-    // Configurar HMR para que el cliente use el puerto público
-    // Si tu IP pública cambia o usas dominio, actualiza "host"
+    // Permitir conexiones desde el dominio
+    allowedHosts: ['kusystem.ddns.net'],
+    // Configurar HMR para que el cliente use el dominio público
     hmr: {
-      host: '181.123.91.8',
-      port: 5173,
-      clientPort: 5173,
+      host: 'kusystem.ddns.net',
+      port: 443,
+      protocol: 'wss',
+      clientPort: 443
     },
   },
 })

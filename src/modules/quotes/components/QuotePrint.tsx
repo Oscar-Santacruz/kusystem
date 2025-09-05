@@ -115,7 +115,7 @@ export const QuotePrint = forwardRef<HTMLDivElement, QuotePrintProps>(function Q
           <div className="no-print-shadow text-4xl font-black tracking-wide text-black" style={{textShadow: '0 1px 0 #bbb, 0 2px 0 #aaa, 0 3px 0 #999, 0 4px 0 #888, 0 5px 0 #777'}}>
             PRESUPUESTO
           </div>
-          <div className="mt-2 text-2xl font-bold">N° {onlyDigits(data.number) || data.id.slice(0, 6)}</div>
+          <div className="mt-2 text-2xl font-bold">N° {data.number ? String(data.number).padStart(4, '0') : data.id.slice(0, 6)}</div>
           <div className="text-base font-semibold">
             {formatDateUpper(data.issueDate)}
           </div>
@@ -134,10 +134,9 @@ export const QuotePrint = forwardRef<HTMLDivElement, QuotePrintProps>(function Q
             {data.customerName}
           </div>
         </div>
-        <div className="text-right">
-        <div className="text-lg font-semibold text-black">
-        Estación de Servicio  : {data.branchName || '—'}
-      </div>
+        <div className="flex flex-col items-center">
+          <div className="text-lg font-semibold text-black">Estación de Servicios</div>
+          <div className="text-lg font-semibold text-black">{data.branchName || '—'}</div>
         </div>
       </div>
 
