@@ -6,16 +6,19 @@ export interface ModalProps {
   title?: string
   onClose: () => void
   children: ReactNode
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
+  footer?: ReactNode
 }
 
-export function Modal({ open, title, onClose, children, size = 'md' }: ModalProps): JSX.Element | null {
+export function Modal({ open, title, onClose, children, size = 'md', footer }: ModalProps): JSX.Element | null {
   const panelRef = useRef<HTMLDivElement>(null)
   const restoreFocusRef = useRef<HTMLElement | null>(null)
+  const latestOnClose = useRef(onClose)
+  useEffect(() => { latestOnClose.current = onClose }, [onClose])
   const titleId = useId()
   useEffect(() => {
     function onEsc(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') latestOnClose.current?.()
     }
     if (open) {
       document.addEventListener('keydown', onEsc)
@@ -26,13 +29,17 @@ export function Modal({ open, title, onClose, children, size = 'md' }: ModalProp
       const focus = () => {
         const panel = panelRef.current
         if (!panel) return
+        // Priorizar elemento con autofocus explícito
+        const auto = panel.querySelector<HTMLElement>('[autofocus]')
+        if (auto) { auto.focus(); return }
+        // Priorizar inputs/selects/textarea y excluir botón de cerrar
         const selectors = [
-          'a[href]',
-          'area[href]',
-          'button:not([disabled])',
           'input:not([disabled]):not([type="hidden"])',
           'select:not([disabled])',
           'textarea:not([disabled])',
+          'button:not([disabled]):not([data-modal-close="true"])',
+          'a[href]',
+          'area[href]',
           '[tabindex]:not([tabindex="-1"])',
         ].join(',')
         const focusables = panel.querySelectorAll<HTMLElement>(selectors)
@@ -52,10 +59,10 @@ export function Modal({ open, title, onClose, children, size = 'md' }: ModalProp
       }
       restoreFocusRef.current = null
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
-  const maxW = size === 'lg' ? 'max-w-3xl' : size === 'sm' ? 'max-w-md' : 'max-w-xl'
+  const maxW = size === 'xl' ? 'max-w-5xl' : size === 'lg' ? 'max-w-3xl' : size === 'sm' ? 'max-w-md' : 'max-w-xl'
   return createPortal(
     <div 
       className="fixed inset-0 z-[1000]" 
@@ -85,12 +92,12 @@ export function Modal({ open, title, onClose, children, size = 'md' }: ModalProp
             const panel = panelRef.current
             if (!panel) return
             const selectors = [
-              'a[href]',
-              'area[href]',
-              'button:not([disabled])',
               'input:not([disabled]):not([type="hidden"])',
               'select:not([disabled])',
               'textarea:not([disabled])',
+              'button:not([disabled]):not([data-modal-close="true"])',
+              'a[href]',
+              'area[href]',
               '[tabindex]:not([tabindex="-1"])',
             ].join(',')
             const focusables = Array.from(panel.querySelectorAll<HTMLElement>(selectors)).filter((el) => el.offsetParent !== null)
@@ -117,11 +124,16 @@ export function Modal({ open, title, onClose, children, size = 'md' }: ModalProp
         >
           <div className="flex items-center justify-between border-b px-4 py-3">
             <h3 id={titleId} className="text-lg font-semibold">{title}</h3>
-            <button type="button" onClick={onClose} className="rounded px-2 py-1 text-slate-500 hover:bg-slate-100" aria-label="Cerrar">✕</button>
+            <button type="button" onClick={onClose} className="rounded px-2 py-1 text-slate-500 hover:bg-slate-100" aria-label="Cerrar" data-modal-close="true">✕</button>
           </div>
           <div className="p-4">
             {children}
           </div>
+          {footer && (
+            <div className="flex items-center justify-end gap-3 border-t px-4 py-3">
+              {footer}
+            </div>
+          )}
         </div>
       </div>
     </div>,
