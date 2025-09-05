@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 import type { CreateQuoteInput, QuoteItem, AdditionalChargeType } from '@/modules/quotes/types'
 import { AdditionalChargeTypes } from '@/modules/quotes/types'
@@ -10,6 +11,11 @@ import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue'
 import { useToast } from '@/shared/ui/toast'
 import { useClientBranches } from '@/modules/client-branches/hooks/useClientBranches'
 import { QuoteSidebar } from '@/modules/quotes/components/QuoteSidebar'
+import { ChargesChips } from '@/modules/quotes/components/ChargesChips'
+import { computeTotals } from '@/lib/quotes/calc'
+import { ItemsSection } from '@/modules/quotes/components/ItemsSection'
+import { GeneralSection } from '@/modules/quotes/components/GeneralSection'
+import { ClientSelector } from '@/modules/quotes/components/ClientSelector'
 
 export interface QuoteFormValues extends CreateQuoteInput {}
 
@@ -87,7 +93,22 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
   const [clientSearch, setClientSearch] = useState('')
   const [productSearch, setProductSearch] = useState('')
   const productSearchRef = useRef<HTMLInputElement | null>(null)
-  const [openClientModal, setOpenClientModal] = useState(false)
+  const [sp, setSp] = useSearchParams()
+  const isClientModalOpen = sp.get('modal') === 'client' && (sp.get('mode') === 'create' || sp.get('mode') === 'edit')
+  function openClientModal() {
+    const next = new URLSearchParams(sp)
+    next.set('modal', 'client')
+    next.set('mode', 'create')
+    next.delete('id')
+    setSp(next, { replace: true })
+  }
+  function closeClientModal() {
+    const next = new URLSearchParams(sp)
+    next.delete('modal')
+    next.delete('mode')
+    next.delete('id')
+    setSp(next, { replace: true })
+  }
   const [openProductModal, setOpenProductModal] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const dClientSearch = useDebouncedValue(clientSearch, 400)
@@ -97,9 +118,7 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
   const { success } = useToast()
   const branches = useClientBranches(values.customerId, { page: 1, pageSize: 50 })
   // Combobox (clientes)
-  const [clientOpen, setClientOpen] = useState(false)
-  const [clientActiveIndex, setClientActiveIndex] = useState<number>(-1)
-  const clientListboxId = 'client-listbox'
+  // Combobox control interno movido a ClientSelector
 
   // Formateo con separador de miles para PYG (sin decimales)
   const nf = useMemo(() => new Intl.NumberFormat('es-AR', { useGrouping: true, minimumFractionDigits: 0, maximumFractionDigits: 0 }), [])
@@ -110,7 +129,6 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
   // Mostrar errores de formulario (validaciones generales)
 
   // Cargos adicionales dinámicos
-  const allChargeTypes = useMemo(() => Object.values(AdditionalChargeTypes) as AdditionalChargeType[], [])
 
   function upsertCharge(type: AdditionalChargeType, amount: number) {
     setValues((prev) => {
@@ -262,13 +280,7 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
   }
 
   const totals = useMemo(() => {
-    const items = values.items ?? []
-    const subtotal = items.reduce((acc, it) => acc + it.quantity * it.unitPrice, 0)
-    const tax = items.reduce((acc, it) => acc + (it.taxRate ? (it.quantity * it.unitPrice * it.taxRate) : 0), 0)
-    const discount = items.reduce((acc, it) => acc + (it.discount ?? 0), 0)
-    const charges = (values.additionalCharges ?? []).reduce((acc, c) => acc + (c.amount || 0), 0)
-    const total = subtotal + tax + charges - discount
-    return { subtotal, tax, discount, charges, total }
+    return computeTotals(values.items ?? [], values.additionalCharges ?? [])
   }, [values.items, values.additionalCharges])
 
   const canSubmit = Boolean(values.customerId) && ((values.items?.length ?? 0) > 0)
@@ -325,365 +337,75 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
         onSubmit={handleSubmitFromSidebar}
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        {/* Emisión (no editable) */}
-        <label className="flex flex-col gap-1">
-          <span className="text-sm text-slate-300">Emisión</span>
-          <div className="w-40 rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white">{values.issueDate || '-'}</div>
-        </label>
+      {/* Información General */}
+      <div className="rounded-lg border border-slate-700 bg-slate-900/50 p-6">
+        <h3 className="mb-4 text-lg font-semibold text-slate-200">📋 Información General</h3>
+        
+        {/* Cliente */}
+        <ClientSelector
+          valueId={values.customerId}
+          clientSearch={clientSearch}
+          setClientSearch={setClientSearch}
+          clients={clients}
+          onSelectClient={(id, name) => {
+            handleChange('customerId', id)
+            handleChange('customerName', name)
+            // resetear sucursal al cambiar de cliente
+            handleChange('branchId', undefined)
+            handleChange('branchName', '')
+          }}
+          onOpenCreateClient={() => openClientModal()}
+        />
 
-        {/* Vencimiento en días */}
-        <label className="flex flex-col gap-1">
-          <span id="dueDays-label" className="text-sm text-slate-300">Vencimiento en días</span>
-          <input
-            type="number"
-            min={0}
-            className="w-40 rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white outline-none focus:ring"
-            aria-labelledby="dueDays-label"
-            value={dueInDays}
-            onChange={(e) => setDueInDays(Number(e.target.value))}
-          />
-          <span className="text-xs text-slate-400">Fecha de vencimiento: {values.dueDate || '-'}</span>
-          {dateInvalid ? <span className="text-xs text-red-400">La fecha de vencimiento no puede ser anterior a la emisión.</span> : null}
-        </label>
-
-        <div className="flex flex-col gap-1 sm:col-span-3">
-          <span className="text-sm text-slate-300">Cliente</span>
-          <div className="flex gap-2">
-            <div className="relative min-w-0 flex-1">
-              <input
-                id="client-combobox"
-                role="combobox"
-                aria-expanded={clientOpen}
-                aria-controls={clientListboxId}
-                aria-autocomplete="list"
-                aria-activedescendant={clientActiveIndex >= 0 && clients.data?.data?.[clientActiveIndex] ? `client-option-${clients.data.data[clientActiveIndex].id}` : undefined}
-                className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 pr-9 text-white outline-none focus:ring"
-                value={clientSearch}
-                onChange={(e) => {
-                  setClientSearch(e.target.value)
-                  setClientOpen(true)
-                  setClientActiveIndex(-1)
-                }}
-                onFocus={() => setClientOpen(true)}
-                onBlur={() => {
-                  // Cerrar después de permitir clic en opciones (coordinado con onMouseDown en listbox)
-                  setTimeout(() => setClientOpen(false), 100)
-                }}
-                onKeyDown={(e) => {
-                  const items = clients.data?.data ?? []
-                  if (e.key === 'ArrowDown') {
-                    e.preventDefault()
-                    if (!items.length) return
-                    setClientOpen(true)
-                    setClientActiveIndex((i) => (i + 1) % items.length)
-                  } else if (e.key === 'ArrowUp') {
-                    e.preventDefault()
-                    if (!items.length) return
-                    setClientOpen(true)
-                    setClientActiveIndex((i) => (i <= 0 ? items.length - 1 : i - 1))
-                  } else if (e.key === 'Enter') {
-                    if (clientActiveIndex >= 0 && items[clientActiveIndex]) {
-                      e.preventDefault()
-                      const c = items[clientActiveIndex]
-                      handleChange('customerId', c.id)
-                      handleChange('customerName', c.name)
-                      // Resetear sucursal al cambiar de cliente
-                      handleChange('branchId', undefined)
-                      handleChange('branchName', '')
-                      setClientSearch(c.name)
-                      setClientOpen(false)
-                    }
-                  } else if (e.key === 'Escape') {
-                    setClientOpen(false)
-                  }
-                }}
-                placeholder="Buscar cliente…"
-              />
-            {clientSearch ? (
-              <button
-                type="button"
-                aria-label="Limpiar búsqueda de cliente"
-                onClick={() => {
-                  setClientSearch('')
-                  setClientActiveIndex(-1)
-                  setClientOpen(false)
-                }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-0.5 text-slate-300 hover:bg-slate-800"
-              >
-                ×
-              </button>
-            ) : null}
-          </div>
-            {/* Botón crear cliente al lado del combobox */}
-            <button
-              type="button"
-              className="shrink-0 rounded border border-slate-600 px-3 py-2 text-slate-200 hover:bg-slate-800"
-              onClick={() => setOpenClientModal(true)}
-            >
-              Crear cliente
-            </button>
-          </div>
-
-          {/* resultados (listbox) */}
-          <div
-            className={`basis-full max-h-40 overflow-auto rounded border border-slate-800 bg-slate-900 ${clientOpen ? '' : 'hidden'}`}
-            role="listbox"
-            id={clientListboxId}
-            aria-label="Resultados de clientes"
-            onMouseDown={(e) => {
-              // Evitar que el blur cierre antes de click
-              e.preventDefault()
+        <div className="mt-4">
+          <GeneralSection
+            issueDate={values.issueDate || ''}
+            dueInDays={dueInDays}
+            dueDate={values.dueDate || ''}
+            onChangeDueInDays={(n) => setDueInDays(n)}
+            customerId={values.customerId}
+            branchId={values.branchId}
+            branchName={values.branchName}
+            showBranchSelector={showBranchSelector}
+            setShowBranchSelector={(v) => {
+              setShowBranchSelector(v)
+              if (!v) setValues(prev => ({ ...prev, branchId: undefined, branchName: '' }))
             }}
-          >
-            {clients.isPending && !clients.data ? (
-              <div className="px-3 py-2 text-sm text-slate-400" aria-live="polite">Buscando…</div>
-            ) : clients.data?.data?.length ? (
-              clients.data.data.map((c, idx) => {
-                const isSelected = values.customerId === c.id
-                const isActive = idx === clientActiveIndex
-                return (
-                  <div
-                    id={`client-option-${c.id}`}
-                    key={c.id}
-                    role="option"
-                    aria-selected={isSelected}
-                    onMouseEnter={() => setClientActiveIndex(idx)}
-                    onClick={() => {
-                      handleChange('customerId', c.id)
-                      handleChange('customerName', c.name)
-                      // Resetear sucursal al cambiar de cliente
-                      handleChange('branchId', undefined)
-                      handleChange('branchName', '')
-                      setClientSearch(c.name)
-                      setClientOpen(false)
-                    }}
-                    className={`flex cursor-pointer items-center justify-between px-3 py-2 text-slate-200 ${
-                      isActive ? 'bg-slate-800 text-white' : ''
-                    }`}
-                  >
-                    <span className="truncate">{c.name}</span>
-                    {isSelected ? <span className="text-xs text-slate-400">seleccionado</span> : null}
-                  </div>
-                )
-              })
-            ) : (
-              <div className="px-3 py-2 text-sm text-slate-400" aria-live="polite">{clientSearch ? 'Sin resultados' : 'Escribe para buscar'}</div>
-            )}
-          </div>
-        </div>
-
-        <label className="hidden">
-          <span className="text-sm text-slate-300">Moneda</span>
-          <select
-            className="w-40 rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white outline-none focus:ring"
-            value={values.currency ?? 'PYG'}
-            onChange={(e) => handleChange('currency', e.target.value)}
-          >
-            <option value="PYG">PYG</option>
-          </select>
-        </label>
-
-        
-        
-
-        {/* Selector de Estación de Servicio (según cliente) */}
-        <div className="space-y-2">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={showBranchSelector}
-              onChange={(e) => {
-                setShowBranchSelector(e.target.checked)
-                if (!e.target.checked) {
-                  setValues(prev => ({ ...prev, branchId: undefined, branchName: '' }))
-                }
-              }}
-              className="rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="text-sm text-slate-300">Elegir estación de servicio</span>
-          </label>
-          
-          {showBranchSelector && values.customerId && (
-            <label className="flex flex-col gap-1">
-              <span className="text-sm text-slate-300">Estación de Servicio</span>
-              <select
-                disabled={!values.customerId || branches.isLoading}
-                className="rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white outline-none focus:ring disabled:opacity-60"
-                value={values.branchId ?? ''}
-                onChange={(e) => {
-                  const branchId = e.target.value || undefined
-                  const branch = (branches.data?.data ?? []).find((b) => b.id === branchId)
-                  setValues((prev) => ({ ...prev, branchId, branchName: branch?.name ?? '' }))
-                }}
-              >
-                <option value="">Sin estación específica</option>
-                {(branches.data?.data ?? []).map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          {showBranchSelector && values.customerId && (branches.data?.data?.length ?? 0) === 0 ? (
-            <span className="text-xs text-slate-400">Sin sucursales para este cliente.</span>
-          ) : null}
-          
-          {showBranchSelector && !values.customerId && (
-            <span className="text-xs text-slate-400">Primero selecciona un cliente para ver las estaciones de servicio.</span>
-          )}
+            branches={branches}
+            onSelectBranch={(branchId, branchName) => setValues(prev => ({ ...prev, branchId, branchName }))}
+          />
         </div>
       </div>
 
-      {/* (Notas y Cargos se mueven debajo de la grilla de productos) */}
+      {/* Items */}
+      <div className="rounded-lg border border-slate-700 bg-slate-900/50 p-6">
+        <h3 className="mb-4 text-lg font-semibold text-slate-200">📦 Items</h3>
+        
+        {/* Productos / Ítems */}
+        <ItemsSection
+          productSearch={productSearch}
+          setProductSearch={setProductSearch}
+          productSearchRef={productSearchRef}
+          products={products}
+          onOpenCreateProduct={() => setOpenProductModal(true)}
+          onAddFromProduct={(p) => addItemFromProduct(p)}
+          onUpdateItem={(i, patch) => updateItem(i, patch)}
+          onRemoveItem={(i) => removeItem(i)}
+          items={values.items ?? []}
+          formatPrice={formatPrice}
+        />
 
-      {/* Productos / Ítems */}
-      <div className="relative space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-slate-300">Ítems</span>
-          <div className="flex gap-2">
-            <input
-              ref={productSearchRef}
-              className="w-64 rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white outline-none focus:ring"
-              value={productSearch}
-              onChange={(e) => setProductSearch(e.target.value)}
-              placeholder="Buscar producto…"
-            />
-            <button type="button" onClick={() => setOpenProductModal(true)} className="rounded border border-slate-600 px-3 py-2 text-slate-200 hover:bg-slate-800">
-              Crear producto
-            </button>
-          </div>
-        </div>
-        {/* Botón flotante oculto */}
-        <button type="button" className="hidden" aria-hidden="true" tabIndex={-1} />
-        {productSearch.trim() ? (
-          <div className="max-h-40 overflow-auto rounded border border-slate-800 bg-slate-900">
-            {products.isPending && !products.data ? (
-              <div className="px-3 py-2 text-sm text-slate-400">Buscando…</div>
-            ) : products.data?.data?.length ? (
-              products.data.data.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => addItemFromProduct({ id: p.id, name: p.name, price: p.price, taxRate: p.taxRate })}
-                  className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-slate-800 focus:bg-slate-800 text-slate-200"
-                >
-                  <span className="truncate">{p.name}</span>
-                  <span className="text-xs text-slate-400">+ Agregar</span>
-                </button>
-              ))
-            ) : (
-              <div className="px-3 py-2 text-sm text-slate-400">Sin resultados</div>
-            )}
-          </div>
-        ) : null}
-
-        {/* Tabla de ítems */}
-        <div className="overflow-x-hidden">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr>
-                <th className="border border-slate-800 px-3 py-2 text-left w-2/5">Descripción</th>
-                <th className="border border-slate-800 px-3 py-2 text-right w-20">Cantidad</th>
-                <th className="border border-slate-800 px-3 py-2 text-right w-28">P. Unit</th>
-                <th className="border border-slate-800 px-3 py-2 text-right w-28">Total</th>
-                <th className="border border-slate-800 px-3 py-2 text-center w-16">Acción</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(values.items ?? []).map((it, idx) => {
-                return (
-                  <tr key={idx}>
-                    <td className="border border-slate-800 px-3 py-2">
-                      <div className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white" title={it.description}>
-                        {it.description}
-                      </div>
-                    </td>
-                    <td className="border border-slate-800 px-3 py-2 text-right">
-                      <input
-                        type="number"
-                        min={0}
-                        step={1}
-                        className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-right text-white outline-none"
-                        value={it.quantity}
-                        onChange={(e) => updateItem(idx, { quantity: Math.max(0, Math.trunc(Number(e.target.value) || 0)) })}
-                      />
-                    </td>
-                    <td className="border border-slate-800 px-3 py-2 text-right">
-                      <div className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-right text-white" title={String(it.unitPrice ?? 0)}>
-                        {formatPrice(it.unitPrice ?? 0)}
-                      </div>
-                    </td>
-                    <td className="border border-slate-800 px-3 py-2 text-right font-medium">
-                      {formatPrice(it.quantity * it.unitPrice)}
-                    </td>
-                    <td className="border border-slate-800 px-3 py-2 text-center">
-                      <button
-                        type="button"
-                        onClick={() => removeItem(idx)}
-                        className="inline-flex items-center justify-center rounded border border-red-700 p-2 text-red-300 hover:bg-red-950 transition-colors"
-                        aria-label="Eliminar ítem"
-                        title="Eliminar ítem"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4" aria-hidden="true">
-                          <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </button>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      
-
-      {/* Cargos adicionales (debajo de Notas) */}
-      <div className="space-y-2">
-        {/* Chips para agregar cargos */}
-        <div className="flex flex-wrap items-center gap-2">
-          {allChargeTypes
-            .filter((t) => !(values.additionalCharges ?? []).some((c) => c.type === t))
-            .map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => addCharge(t)}
-                className="rounded-full border border-slate-700 px-3 py-1 text-sm text-slate-200 hover:bg-slate-800"
-              >
-                + {labelFromType(t)}
-              </button>
-            ))}
+        {/* Servicios Adicionales dentro de Items */}
+        <div className="mt-6">
+          <ChargesChips
+            charges={(values.additionalCharges ?? []).map(c => ({ type: c.type, amount: c.amount }))}
+            onAdd={(t) => addCharge(t)}
+            onUpdate={(t, amount) => upsertCharge(t, amount)}
+            onRemove={(t) => removeCharge(t)}
+          />
         </div>
 
-        {(values.additionalCharges ?? []).length ? (
-          <div className="grid gap-2 sm:grid-cols-2">
-            {(values.additionalCharges ?? []).map((c) => (
-              <div key={c.type} className="flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900 px-3 py-2">
-                <span className="min-w-24 flex-1 text-sm">{labelFromType(c.type)}</span>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  className="w-28 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-right text-white outline-none"
-                  value={c.amount ?? 0}
-                  onChange={(e) => upsertCharge(c.type, Number(e.target.value))}
-                />
-                <button
-                  type="button"
-                  aria-label="Quitar cargo"
-                  className="rounded-full border border-red-700 px-2 py-1 text-xs text-red-300 hover:bg-red-950"
-                  onClick={() => removeCharge(c.type)}
-                >
-                  Quitar
-                </button>
-              </div>
-            ))}
-          </div>
-        ) : null}
+
       </div>
 
       
@@ -691,15 +413,15 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
 
     {/* Modal Crear Cliente */}
     <ClientCreateModal
-      open={openClientModal}
-      onClose={() => setOpenClientModal(false)}
+      open={isClientModalOpen}
+      onClose={() => closeClientModal()}
       onSuccess={(c) => {
         handleChange('customerId', c.id)
         handleChange('customerName', c.name)
         // Resetear sucursal al cambiar de cliente
         handleChange('branchId', undefined)
         handleChange('branchName', '')
-        setOpenClientModal(false)
+        closeClientModal()
         setClientSearch('')
         success('Cliente creado')
       }}

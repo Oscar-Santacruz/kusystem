@@ -38,9 +38,15 @@ export interface Product {
   id: string
   sku?: string
   name: string
-  unit?: string
+  description?: string
+  unit: string
   price: number
-  taxRate?: number
+  cost: number
+  taxRate: number
+  stock: number
+  minStock: number
+  barcode?: string
+  priceIncludesTax?: boolean
   createdAt?: string
   updatedAt?: string
 }
@@ -48,9 +54,15 @@ export interface Product {
 export interface CreateProductInput {
   sku?: string
   name: string
-  unit?: string
+  description?: string
+  unit: string
   price: number
-  taxRate?: number
+  cost: number
+  taxRate: number
+  stock: number
+  minStock: number
+  barcode?: string
+  priceIncludesTax?: boolean
 }
 
 export interface UpdateProductInput extends Partial<CreateProductInput> {}

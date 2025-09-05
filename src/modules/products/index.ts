@@ -2,7 +2,6 @@ import { lazy, Suspense, createElement, type ReactElement } from 'react'
 import type { ModuleDescriptor } from '@/shared/types/module'
 
 const ProductsListPage = lazy(() => import('./pages/ProductsListPage').then(m => ({ default: m.ProductsListPage })))
-const ProductNewPage = lazy(() => import('./pages/ProductNewPage').then(m => ({ default: m.ProductNewPage })))
 const ProductEditPage = lazy(() => import('./pages/ProductEditPage').then(m => ({ default: m.ProductEditPage })))
 
 function suspense(el: ReactElement): ReactElement {
@@ -14,7 +13,6 @@ export const productsModule: ModuleDescriptor = {
   id: 'products',
   routes: [
     { path: 'products', element: suspense(createElement(ProductsListPage)) },
-    { path: 'products/new', element: suspense(createElement(ProductNewPage)) },
     { path: 'products/:id/edit', element: suspense(createElement(ProductEditPage)) },
   ],
   nav: [
