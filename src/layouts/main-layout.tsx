@@ -2,6 +2,7 @@ import { Outlet, NavLink } from 'react-router-dom'
 import { useAuth0 } from '@auth0/auth0-react'
 import { useEffect, useState } from 'react'
 import { ThemeToggleButton } from '@/shared/ui/theme'
+import { OrgSelector } from '@/components/org/OrgSelector'
 
 export function MainLayout() {
   const { user, isAuthenticated, isLoading, logout } = useAuth0()
@@ -49,14 +50,14 @@ export function MainLayout() {
   return (
     <div className={`h-dvh grid overflow-hidden bg-slate-950 text-slate-200 ${sidebarOpen ? 'grid-cols-[260px_minmax(0,1fr)]' : 'grid-cols-[0px_minmax(0,1fr)]'}`}>
       {/* Sidebar: menú jerárquico con categorías */}
-      <aside className={`bg-slate-900 text-slate-100 ${sidebarOpen ? 'p-0' : 'p-0'} flex flex-col sticky top-0 h-dvh overflow-y-auto ${sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+      <aside className={`bg-slate-900 text-slate-100 ${sidebarOpen ? 'p-0' : 'p-0'} flex flex-col sticky top-0 h-dvh ${sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
         {/* Header del sidebar */}
         <div className="p-4 border-b border-slate-800">
           <h1 className="text-lg font-semibold text-white">kuSystem</h1>
         </div>
 
         {/* Navegación */}
-        <nav className="flex-1 py-2">
+        <nav className="flex-1 overflow-y-auto py-2">
           {/* Inicio */}
           <NavLink
             to="/main/welcome"
@@ -181,10 +182,66 @@ export function MainLayout() {
               </div>
             )}
           </div>
-        </nav>
 
+          {/* Sección Mi organización */}
+          <div className="mt-2">
+            <button
+              onClick={() => toggleSection('mi_org')}
+              className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 2a1 1 0 01.894.553l.764 1.528 1.687.245a1 1 0 01.555 1.706l-1.22 1.189.288 1.677a1 1 0 01-1.451 1.054L10 10.708l-1.517.799a1 1 0 01-1.451-1.054l.288-1.677-1.22-1.189a1 1 0 01.555-1.706l1.687-.245.764-1.528A1 1 0 0110 2z"/>
+                </svg>
+                Mi organización
+              </div>
+              <svg 
+                className={`w-4 h-4 transition-transform ${expandedSections.mi_org ? 'rotate-90' : ''}`} 
+                fill="currentColor" 
+                viewBox="0 0 20 20"
+              >
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/>
+              </svg>
+            </button>
+            {expandedSections.mi_org && (
+              <div className="bg-slate-800/30">
+                <NavLink
+                  to="/main/organization/members"
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors ${
+                      isActive 
+                        ? 'bg-blue-600 text-white border-r-2 border-blue-400' 
+                        : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                    }`
+                  }
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
+                  </svg>
+                  Miembros
+                </NavLink>
+                <NavLink
+                  to="/main/organization/invite"
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors ${
+                      isActive 
+                        ? 'bg-blue-600 text-white border-r-2 border-blue-400' 
+                        : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                    }`
+                  }
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 01-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd"/>
+                  </svg>
+                  Invitar
+                </NavLink>
+              </div>
+            )}
+          </div>
+
+        </nav>
         {/* Usuario en la parte inferior */}
-        <div className="border-t border-slate-800 p-4">
+        <div className="mt-auto border-t border-slate-800 p-4">
           {isLoading ? (
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-slate-700 rounded-full animate-pulse"></div>
@@ -212,7 +269,7 @@ export function MainLayout() {
                 onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd"/>
+                  <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/>
                 </svg>
                 Cerrar Sesión
               </button>
@@ -239,7 +296,8 @@ export function MainLayout() {
                 <path d="M5.5 4h13A1.5 1.5 0 0 1 20 5.5v13A1.5 1.5 0 0 1 18.5 20h-13A1.5 1.5 0 0 1 4 18.5v-13A1.5 1.5 0 0 1 5.5 4Zm2.5 0v16" stroke="currentColor" strokeWidth="1.5" fill="none" />
               </svg>
             </button>
-            <div className="flex items-center justify-end flex-1">
+            <div className="flex items-center justify-end flex-1 gap-3">
+              <OrgSelector />
               <ThemeToggleButton />
             </div>
           </div>
