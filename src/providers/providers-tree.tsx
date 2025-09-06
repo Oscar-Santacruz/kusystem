@@ -7,6 +7,7 @@ import { ApiClient, ApiInstance } from '@/services/api'
 import { ThemeProvider } from '@/shared/ui/theme'
 import { ToastProvider, useToast } from '@/shared/ui/toast'
 import { ErrorBoundary } from '@/shared/ui/error-boundary'
+import { useOrgStore } from '@/lib/org-store'
 
 type ProvidersProps = {
   children: ReactNode
@@ -15,7 +16,7 @@ type ProvidersProps = {
 const queryClient = new QueryClient()
 
 function AuthBridge({ children }: { children: ReactNode }) {
-  const { getAccessTokenSilently, isAuthenticated } = useAuth0()
+  const { getAccessTokenSilently, isAuthenticated, user } = useAuth0()
   useEffect(() => {
     console.log('[auth] AuthBridge mount. isAuthenticated:', isAuthenticated)
     ApiClient.setAuthTokenProvider(async () => {
@@ -29,7 +30,30 @@ function AuthBridge({ children }: { children: ReactNode }) {
         return null
       }
     })
-  }, [getAccessTokenSilently, isAuthenticated])
+    // Encabezados puente para backend dev (getCurrentUser usa x-user-*)
+    // En producción, esto debería ser reemplazado por validación JWT server-side
+    if (isAuthenticated && user) {
+      // Si cambia el usuario autenticado, reseteamos la org activa para evitar fugas entre cuentas
+      try {
+        const prevSub = localStorage.getItem('auth.user.sub')
+        if (user.sub && user.sub !== prevSub) {
+          localStorage.setItem('auth.user.sub', user.sub)
+          localStorage.removeItem('orgId')
+          // Actualiza el store inmediatamente
+          try { useOrgStore.getState().setOrgId(null) } catch { /* noop */ }
+        }
+      } catch { /* noop */ }
+
+      if (user.sub) ApiInstance.setHeader('x-user-sub', user.sub)
+      if (user.email) ApiInstance.setHeader('x-user-email', user.email)
+      const displayName = (user.name || user.nickname || user.email || '').toString()
+      if (displayName) ApiInstance.setHeader('x-user-name', displayName)
+    } else {
+      ApiInstance.removeHeader('x-user-sub')
+      ApiInstance.removeHeader('x-user-email')
+      ApiInstance.removeHeader('x-user-name')
+    }
+  }, [getAccessTokenSilently, isAuthenticated, user])
   return <>{children}</>
 }
 

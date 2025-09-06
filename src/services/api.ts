@@ -23,10 +23,19 @@ export class ApiClient {
     if (!ApiClient._instance) {
       const { VITE_API_BASE_URL } = getEnv()
       // Si no hay VITE_API_BASE_URL, usamos el backend local por defecto
-      const baseURL = VITE_API_BASE_URL || 'http://localhost:4000'
-      ApiClient._instance = new ApiClient(
-        axios.create({ baseURL })
-      )
+      const baseURL = VITE_API_BASE_URL || 'http://localhost:4001'
+      const instance = axios.create({ baseURL })
+      // Inyecta X-Tenant-Id desde localStorage si existe
+      instance.interceptors.request.use((config) => {
+        try {
+          const orgId = localStorage.getItem('orgId') || localStorage.getItem('organizationId')
+          if (orgId) {
+            config.headers = { ...(config.headers || {}), 'X-Tenant-Id': orgId }
+          }
+        } catch {}
+        return config
+      })
+      ApiClient._instance = new ApiClient(instance)
     }
     return ApiClient._instance
   }

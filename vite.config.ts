@@ -15,16 +15,16 @@ export default defineConfig({
   server: {
     // Escuchar en todas las interfaces para permitir acceso externo
     host: true,
-    port: 5173,
+    port: 5175,
     strictPort: true,
-    // Permitir conexiones desde el dominio
-    allowedHosts: ['kusystem.ddns.net'],
-    // Configurar HMR para que el cliente use el dominio público
+    // Permitir conexiones locales y, si aplica, tu dominio público
+    allowedHosts: ['localhost', '127.0.0.1', 'kusystem.ddns.net'],
+    // HMR local estable (Firefox bloqueaba MIME/HMR con wss externo)
     hmr: {
-      host: 'kusystem.ddns.net',
-      port: 443,
-      protocol: 'wss',
-      clientPort: 443
+      host: 'localhost',
+      port: 5175,
+      protocol: 'ws',
+      clientPort: 5175,
     },
   },
 })
