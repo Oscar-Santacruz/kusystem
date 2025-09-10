@@ -1,30 +1,36 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      '@': resolve(dirname(fileURLToPath(import.meta.url)), './src'),
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const PORT = Number(env.VITE_PORT ?? 5175)
+  const HMR_HOST = env.VITE_HMR_HOST || 'localhost'
+
+  return {
+    plugins: [react()],
+    resolve: {
+      alias: {
+        '@': resolve(dirname(fileURLToPath(import.meta.url)), './src'),
+      },
     },
-  },
-  // base: '/ku-system', // descomentar si necesitas path base en despliegue
-  server: {
-    // Escuchar en todas las interfaces para permitir acceso externo
-    host: true,
-    port: 5175,
-    strictPort: true,
-    // Permitir conexiones locales y, si aplica, tu dominio público
-    allowedHosts: ['localhost', '127.0.0.1', 'kusystem.ddns.net'],
-    // HMR local estable (Firefox bloqueaba MIME/HMR con wss externo)
-    hmr: {
-      host: 'localhost',
-      port: 5175,
-      protocol: 'ws',
-      clientPort: 5175,
+    // base: '/ku-system', // descomentar si necesitas path base en despliegue
+    server: {
+      // Escuchar en todas las interfaces para permitir acceso externo
+      host: true,
+      port: PORT,
+      strictPort: true,
+      // Permitir conexiones locales y, si aplica, tu dominio público
+      allowedHosts: ['localhost', '127.0.0.1', 'kusystem.ddns.net'],
+      // HMR local estable (Firefox bloqueaba MIME/HMR con wss externo)
+      hmr: {
+        host: HMR_HOST,
+        port: PORT,
+        protocol: 'ws',
+        clientPort: PORT,
+      },
     },
-  },
+  }
 })
