@@ -3,12 +3,27 @@ import { create } from 'zustand'
 export type OrgState = {
   orgId: string | null
   setOrgId: (id: string | null) => void
+  currentOrg: OrgMeta | null
+  setCurrentOrg: (meta: OrgMeta | null) => void
+  organizations: OrgMeta[]
+  setOrganizations: (list: OrgMeta[]) => void
 }
 
 const STORAGE_KEY = 'orgId'
+const STORAGE_META_KEY = 'orgMeta'
+
+export type OrgMeta = {
+  id: string
+  name: string | null
+  logoUrl: string | null
+}
 
 export const useOrgStore = create<OrgState>((set) => ({
   orgId: (typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null),
+  currentOrg: (typeof window !== 'undefined' ? (() => {
+    try { const raw = localStorage.getItem(STORAGE_META_KEY); return raw ? JSON.parse(raw) as OrgMeta : null } catch { return null }
+  })() : null),
+  organizations: [],
   setOrgId: (id) => {
     if (typeof window !== 'undefined') {
       if (id) localStorage.setItem(STORAGE_KEY, id)
@@ -16,4 +31,14 @@ export const useOrgStore = create<OrgState>((set) => ({
     }
     set({ orgId: id })
   },
+  setCurrentOrg: (meta) => {
+    if (typeof window !== 'undefined') {
+      try {
+        if (meta) localStorage.setItem(STORAGE_META_KEY, JSON.stringify(meta))
+        else localStorage.removeItem(STORAGE_META_KEY)
+      } catch { /* noop */ }
+    }
+    set({ currentOrg: meta })
+  },
+  setOrganizations: (list) => set({ organizations: Array.isArray(list) ? list : [] }),
 }))

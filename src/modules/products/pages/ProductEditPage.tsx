@@ -24,9 +24,14 @@ export function ProductEditPage(): JSX.Element {
         initialValues={{
           sku: data.sku,
           name: data.name,
+          description: (data as any).description ?? '',
           unit: data.unit,
           price: data.price,
           taxRate: data.taxRate,
+          cost: (data as any).cost ?? 0,
+          stock: (data as any).stock ?? 0,
+          minStock: (data as any).minStock ?? 0,
+          barcode: (data as any).barcode ?? '',
         }}
         pending={update.isPending}
         onSubmit={(vals) => {

@@ -10,6 +10,8 @@ const envSchema = z.object({
   VITE_AUTH_DISABLED: z.enum(['true', 'false']).optional(),
   // URL pública base para construir enlaces de presupuestos (p. ej. http://181.123.91.8:4000)
   VITE_PUBLIC_APP_URL: z.string().url().optional(),
+  // URL base del servicio interno de archivos (S3 interno)
+  VITE_FILES_BASE_URL: z.string().url().optional(),
 })
 
 export interface AppEnv {
@@ -20,6 +22,7 @@ export interface AppEnv {
   VITE_AUTH0_CALLBACK_URL?: string
   VITE_AUTH_DISABLED?: 'true' | 'false'
   VITE_PUBLIC_APP_URL?: string
+  VITE_FILES_BASE_URL?: string
 }
 
 export function getEnv(): AppEnv {
@@ -41,6 +44,7 @@ export function getEnv(): AppEnv {
     VITE_API_BASE_URL: env.VITE_API_BASE_URL,
     VITE_AUTH_DISABLED: env.VITE_AUTH_DISABLED,
     VITE_PUBLIC_APP_URL: env.VITE_PUBLIC_APP_URL,
+    VITE_FILES_BASE_URL: env.VITE_FILES_BASE_URL,
   })
   return env
 }

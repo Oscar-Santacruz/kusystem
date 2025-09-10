@@ -7,7 +7,16 @@ import { clientBranchesModule } from '@/modules/client-branches'
 export const modules: ModuleDescriptor[] = [quotesModule, clientsModule, productsModule, clientBranchesModule]
 
 export function getMainChildrenRoutes(): ModuleRoute[] {
-  return modules.flatMap((m) => m.routes)
+  try {
+    const ids = modules.map((m) => m.id)
+    console.log('[registry] modules loaded:', ids)
+    const allRoutes = modules.flatMap((m) => m.routes)
+    console.log('[registry] routes injected:', allRoutes.map((r) => r.path))
+    return allRoutes
+  } catch (e) {
+    console.error('[registry] error building routes:', e)
+    return modules.flatMap((m) => m.routes)
+  }
 }
 
 export function getModuleNavItems(): ModuleNavItem[] {

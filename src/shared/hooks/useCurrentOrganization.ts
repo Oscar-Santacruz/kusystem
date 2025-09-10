@@ -22,13 +22,14 @@ export function useCurrentOrganization(): { organization: Organization | null, l
     console.log('  - metaMatchesStore:', metaMatchesStore)
   } catch {}
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<import('@/services/org').Membership[]>({
     queryKey: ['my-organizations'],
     queryFn: async () => {
       try { console.log('[useCurrentOrganization] fetching my organizations...') } catch {}
       const res = await getMyOrganizations()
-      try { console.log('[useCurrentOrganization] fetched organizations:', res?.data?.length ?? 0) } catch {}
-      return res.data
+      try { console.log('[useCurrentOrganization] fetched organizations (raw):', Array.isArray((res as any)?.data) ? (res as any).data.length : 'not-array') } catch {}
+      const list = Array.isArray((res as any)?.data) ? (res as any).data : []
+      return list as import('@/services/org').Membership[]
     },
     enabled: !authLoading && isAuthenticated && !metaMatchesStore,
     retry: 2,
@@ -42,7 +43,7 @@ export function useCurrentOrganization(): { organization: Organization | null, l
     console.log('  - authLoading:', authLoading)
     console.log('  - metaMatchesStore:', metaMatchesStore)
     console.log('  - isLoading:', isLoading)
-    console.log('  - data length:', data?.length ?? 'no data')
+    console.log('  - data length:', Array.isArray(data) ? data.length : 'not array')
   } catch {}
 
   // Resolver organization y logoUrl
@@ -66,7 +67,8 @@ export function useCurrentOrganization(): { organization: Organization | null, l
       console.log('  - data available:', Boolean(data))
       console.log('  - searching for orgId:', orgId)
     } catch {}
-    const found = (data || []).find((m) => m.tenant?.id?.toString?.() === orgId || m.tenant?.id === orgId)?.tenant || null
+    const list = Array.isArray(data) ? data : []
+    const found = list.find((m: import('@/services/org').Membership) => m.tenant?.id?.toString?.() === orgId || m.tenant?.id === orgId)?.tenant || null
     organization = found
     try { 
       console.log('[useCurrentOrganization] query result:')

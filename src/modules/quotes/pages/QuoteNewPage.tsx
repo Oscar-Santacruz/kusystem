@@ -1,17 +1,37 @@
-import { type JSX } from 'react'
+import { type JSX, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCreateQuote } from '@/modules/quotes/hooks/useQuotes'
 import { QuoteForm } from '@/modules/quotes/components/QuoteForm'
 import logo from '@/assets/logo.png'
+import { useCurrentOrganization } from '@/shared/hooks/useCurrentOrganization'
 
 export function QuoteNewPage(): JSX.Element {
   const navigate = useNavigate()
   const create = useCreateQuote()
+  const { logoUrl: orgLogoUrl } = useCurrentOrganization()
+
+  // Logs de diagnóstico de montaje y cambios relevantes
+  useEffect(() => {
+    // Montaje de la página
+    console.log('[QuoteNewPage] mount')
+    return () => console.log('[QuoteNewPage] unmount')
+  }, [])
+
+  useEffect(() => {
+    console.log('[QuoteNewPage] orgLogoUrl changed:', orgLogoUrl)
+  }, [orgLogoUrl])
+
+  useEffect(() => {
+    console.log('[QuoteNewPage] create.isPending:', create.isPending)
+  }, [create.isPending])
+
+  const imgSrc = orgLogoUrl || (logo as any)
+  console.log('[QuoteNewPage] img src resolved:', { imgSrc, hasOrgLogoUrl: Boolean(orgLogoUrl) })
 
   return (
     <section className="space-y-4">
       <div className="flex items-center gap-4">
-        <img src={logo} alt="Logo" className="h-32 w-64 object-contain" />
+        <img src={imgSrc} alt="Logo" className="h-32 w-64 object-contain" />
         <h2 className="text-2xl font-semibold">Nuevo Presupuesto</h2>
       </div>
       <QuoteForm
