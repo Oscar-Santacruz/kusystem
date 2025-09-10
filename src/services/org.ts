@@ -4,6 +4,7 @@ export type Organization = {
   id: string
   name: string
   slug?: string | null
+  logoUrl?: string | null
 }
 
 export type Membership = {
@@ -13,15 +14,17 @@ export type Membership = {
   tenant: Organization
 }
 
-export async function createOrganization(input: { name: string; slug: string }) {
+export async function createOrganization(input: { name: string; slug: string; logoUrl?: string | null }) {
   return ApiInstance.post<Organization>('/organizations', {
-    data: input,
+    data: { name: input.name, slug: input.slug, ...(input.logoUrl ? { logoUrl: input.logoUrl } : {}) },
     headers: { 'Content-Type': 'application/json' },
   })
 }
 
+export type MyOrganizationsResponse = { data: Array<{ id: string; role: string; tenant: Organization }> }
+
 export async function getMyOrganizations() {
-  return ApiInstance.get<{ data: Array<{ id: string; role: string; tenant: Organization }> }>('/organizations/me')
+  return ApiInstance.get<MyOrganizationsResponse>('/organizations/me')
 }
 
 export async function createInvitation(input: { email: string; role: 'admin' | 'member' }) {

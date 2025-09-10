@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 import type { CreateQuoteInput, QuoteItem, AdditionalChargeType } from '@/modules/quotes/types'
 import { AdditionalChargeTypes } from '@/modules/quotes/types'
 import { ClientCreateModal } from '@/modules/clients/components/ClientCreateModal'
-import { ProductCreateModal } from '@/modules/products/components/ProductCreateModal'
+import { ProductModal } from '@/modules/products/components/ProductModal'
 import { useClients } from '@/modules/clients/hooks/useClients'
 import { useProducts } from '@/modules/products/hooks/useProducts'
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue'
@@ -16,6 +16,7 @@ import { computeTotals } from '@/lib/quotes/calc'
 import { ItemsSection } from '@/modules/quotes/components/ItemsSection'
 import { GeneralSection } from '@/modules/quotes/components/GeneralSection'
 import { ClientSelector } from '@/modules/quotes/components/ClientSelector'
+import { MobileActionBar } from '@/shared/ui/mobile-action-bar'
 
 export interface QuoteFormValues extends CreateQuoteInput {}
 
@@ -304,7 +305,7 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
   return (
     <>
     <form
-      className="space-y-4 lg:pr-[26rem]"
+      className="space-y-4 min-[1020px]:pr-[26rem] pb-24 min-[1020px]:pb-0"
       onSubmit={async (e) => {
         e.preventDefault()
         setFormError(null)
@@ -323,19 +324,6 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
           {formError}
         </div>
       ) : null}
-
-      {/* Panel derecho como layout React */}
-      <QuoteSidebar
-        totals={{ subtotal: totals.subtotal, tax: totals.tax, charges: totals.charges, total: totals.total }}
-        chargeDetails={chargeDetails}
-        notes={values.notes ?? ''}
-        onNotesChange={(v) => handleChange('notes', v)}
-        printNotes={values.printNotes ?? true}
-        onPrintNotesChange={(v) => handleChange('printNotes', v)}
-        canSubmit={canSubmit}
-        pending={pending}
-        onSubmit={handleSubmitFromSidebar}
-      />
 
       {/* Información General */}
       <div className="rounded-lg border border-slate-700 bg-slate-900/50 p-6">
@@ -408,7 +396,36 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
 
       </div>
 
+      {/* Panel de resumen y notas: inline en mobile (<lg), flotante en desktop (lg) */}
+      <QuoteSidebar
+        totals={{ subtotal: totals.subtotal, tax: totals.tax, charges: totals.charges, total: totals.total }}
+        chargeDetails={chargeDetails}
+        notes={values.notes ?? ''}
+        onNotesChange={(v) => handleChange('notes', v)}
+        printNotes={values.printNotes ?? true}
+        onPrintNotesChange={(v) => handleChange('printNotes', v)}
+        canSubmit={canSubmit}
+        pending={pending}
+        onSubmit={handleSubmitFromSidebar}
+      />
+
       
+      {/* Mobile sticky totals + action */}
+      <MobileActionBar>
+        <div className="flex items-center justify-between w-full gap-3">
+          <div className="flex flex-col text-left">
+            <span className="text-[11px] text-slate-400">Total</span>
+            <span className="text-base font-semibold">{new Intl.NumberFormat('es-PY', { maximumFractionDigits: 0 }).format(totals.total)}</span>
+          </div>
+          <button
+            type="submit"
+            className="flex-1 rounded bg-blue-600 px-4 py-3 text-white font-medium hover:bg-blue-500 disabled:opacity-60"
+            disabled={!canSubmit || !!pending}
+          >
+            {pending ? 'Guardando…' : 'Guardar presupuesto'}
+          </button>
+        </div>
+      </MobileActionBar>
     </form>
 
     {/* Modal Crear Cliente */}
@@ -427,11 +444,12 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
       }}
     />
 
-    {/* Modal Crear Producto */}
-    <ProductCreateModal
+    {/* Modal Producto unificado (modo crear) */}
+    <ProductModal
+      mode="create"
       open={openProductModal}
       onClose={() => setOpenProductModal(false)}
-      onSuccess={(p) => {
+      onSuccess={(_, p) => {
         addItemFromProduct({ id: p.id, name: p.name, price: p.price, taxRate: p.taxRate })
         setOpenProductModal(false)
         setProductSearch('')

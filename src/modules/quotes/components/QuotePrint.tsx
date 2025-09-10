@@ -4,13 +4,6 @@ import type { Quote } from '@/modules/quotes/types'
 import QRCode from 'react-qr-code'
 import { getPublicQuoteUrl } from '@/modules/quotes/utils/public-url'
 
-function onlyDigits(v: string | number | undefined | null): string {
-  if (v == null) return ''
-  const s = String(v)
-  const stripped = s.replace(/\D+/g, '')
-  return stripped
-}
-
 function formatCurrency0(n?: number, currency = 'PYG'): string {
   if (n == null) return '-'
   try {
@@ -61,10 +54,11 @@ export interface QuotePrintProps {
   quote: Quote
   id?: string
   className?: string
+  orgLogoUrl?: string | null
 }
 
 export const QuotePrint = forwardRef<HTMLDivElement, QuotePrintProps>(function QuotePrint(
-  { quote: data, id, className },
+  { quote: data, id, className, orgLogoUrl },
   ref
 ) {
   const computed = useMemo(() => {
@@ -109,7 +103,13 @@ export const QuotePrint = forwardRef<HTMLDivElement, QuotePrintProps>(function Q
       {/* Encabezado */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
-          <img src={logo} alt="Santacruz Publicidad" className="h-32 w-80 object-contain" />
+          <img
+            src={orgLogoUrl || (logo as any)}
+            alt="Logo"
+            className="h-32 w-80 object-contain"
+            crossOrigin="anonymous"
+            referrerPolicy="no-referrer"
+          />
         </div>
         <div className="text-right">
           <div className="no-print-shadow text-4xl font-black tracking-wide text-black" style={{textShadow: '0 1px 0 #bbb, 0 2px 0 #aaa, 0 3px 0 #999, 0 4px 0 #888, 0 5px 0 #777'}}>

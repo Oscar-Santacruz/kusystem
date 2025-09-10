@@ -35,10 +35,10 @@ export function QuoteSidebar(props: QuoteSidebarProps): JSX.Element {
 
   return (
     <aside
-      className="hidden lg:block fixed right-4 top-24 z-20 w-96 h-[75vh] rounded-lg border border-slate-700/70 bg-slate-900/95 shadow-2xl"
+      className="w-full min-[1020px]:w-96 min-[1020px]:fixed min-[1020px]:right-4 min-[1020px]:top-24 z-20 min-[1020px]:h-[75vh] rounded-lg border border-slate-700/70 bg-slate-900/95 shadow-2xl"
       aria-label="Panel de resumen y notas"
     >
-      <div className="flex h-full flex-col">
+      <div className="flex flex-col min-[1020px]:h-full">
         <div className="flex-1 space-y-4 overflow-auto p-4">
           {/* Resumen */}
           <section className="rounded-lg border border-slate-700/70 bg-slate-900 p-4 shadow-md">
@@ -87,7 +87,7 @@ export function QuoteSidebar(props: QuoteSidebarProps): JSX.Element {
         </div>
 
         {/* Footer inferior fijo dentro del panel */}
-        <div className="sticky bottom-0 bg-gradient-to-b from-transparent to-slate-900/95 p-4 border-t border-slate-700/70">
+        <div className="sticky bottom-0 bg-gradient-to-b from-transparent to-slate-900/95 p-4 border-t border-slate-700/70 backdrop-blur-sm">
           <div className="flex justify-end">
             <button
               type="button"

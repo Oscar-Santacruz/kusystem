@@ -6,12 +6,14 @@ import { useReactToPrint } from 'react-to-print'
 import { FaEdit, FaPrint, FaFilePdf, FaImage, FaWhatsapp, FaArrowLeft, FaLink } from 'react-icons/fa'
 import { getPublicQuoteUrl } from '@/modules/quotes/utils/public-url'
 import { toast } from 'sonner'
+import { useCurrentOrganization } from '@/shared/hooks/useCurrentOrganization'
 
 export function QuoteDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>()
   const { data, isLoading, isError, refetch } = useQuote(id)
   const printWrapperRef = useRef<HTMLDivElement>(null)
   const handlePrint = useReactToPrint({ contentRef: printWrapperRef })
+  const { logoUrl: orgLogoUrl } = useCurrentOrganization()
 
   function onlyDigits(v: string | number | undefined | null): string {
     if (v == null) return ''
@@ -36,7 +38,7 @@ export function QuoteDetailPage(): JSX.Element {
     const el = document.getElementById('print-sheet-detail')
     if (!el) return
     const html2canvas = (await import('html2canvas')).default
-    const canvas = await html2canvas(el as HTMLElement, { scale: 2, backgroundColor: '#ffffff' })
+    const canvas = await html2canvas(el as HTMLElement, { scale: 2, backgroundColor: '#ffffff', useCORS: true })
     canvas.toBlob((blob: Blob | null) => {
       if (!blob) return
       const url = URL.createObjectURL(blob)
@@ -55,7 +57,7 @@ export function QuoteDetailPage(): JSX.Element {
     const el = document.getElementById('print-sheet-detail')
     if (!el) return
     const html2canvas = (await import('html2canvas')).default
-    const canvas = await html2canvas(el as HTMLElement, { scale: 2, backgroundColor: '#ffffff' })
+    const canvas = await html2canvas(el as HTMLElement, { scale: 2, backgroundColor: '#ffffff', useCORS: true })
     const blob: Blob | null = await new Promise((resolve) => canvas.toBlob((b: Blob | null) => resolve(b), 'image/png'))
     const num = onlyDigits(data?.number ?? id ?? '') || (id ?? 'sin-numero')
     const message = `Presupuesto ${num}`
@@ -423,7 +425,8 @@ export function QuoteDetailPage(): JSX.Element {
               #print-sheet-detail hr { border-color: #e5e7eb !important; }
               #print-sheet-detail .muted { color: #6b7280 !important; }
             `}</style>
-            <QuotePrint id="print-sheet-detail" quote={data} />
+            {/* Pasamos el logo de la organización para la impresión */}
+            <QuotePrint id="print-sheet-detail" quote={data} orgLogoUrl={orgLogoUrl ?? undefined} />
           </div>
         </div>
       ) : null}

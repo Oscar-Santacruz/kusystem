@@ -30,7 +30,10 @@ export class ApiClient {
         try {
           const orgId = localStorage.getItem('orgId') || localStorage.getItem('organizationId')
           if (orgId) {
-            config.headers = { ...(config.headers || {}), 'X-Tenant-Id': orgId }
+            // Asegurar headers y setear la cabecera sin reemplazar el objeto
+            const headers: any = config.headers || {}
+            headers['X-Tenant-Id'] = orgId
+            config.headers = headers
           }
         } catch {}
         return config

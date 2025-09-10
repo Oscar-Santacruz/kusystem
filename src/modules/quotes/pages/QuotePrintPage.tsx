@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useQuote } from '@/modules/quotes/hooks/useQuotes'
 import { QuotePrint } from '@/modules/quotes/components/QuotePrint'
 import { useReactToPrint } from 'react-to-print'
+import { useCurrentOrganization } from '@/shared/hooks/useCurrentOrganization'
 
 function onlyDigits(v: string | number | undefined | null): string {
   if (v == null) return ''
@@ -16,6 +17,7 @@ export function QuotePrintPage(): JSX.Element {
   const { data, isLoading, isError, refetch } = useQuote(id)
   const printRef = useRef<HTMLDivElement>(null)
   const handlePrint = useReactToPrint({ contentRef: printRef })
+  const { logoUrl: orgLogoUrl } = useCurrentOrganization()
 
   if (isLoading) return <div className="p-6">Cargando…</div>
   if (isError) {
@@ -97,7 +99,7 @@ export function QuotePrintPage(): JSX.Element {
       </div>
 
       {/* Hoja de impresión (reutilizable) */}
-      <QuotePrint id="print-sheet" quote={data} ref={printRef} />
+      <QuotePrint id="print-sheet" quote={data} ref={printRef} orgLogoUrl={orgLogoUrl ?? undefined} />
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState, useId, type JSX } from 'react'
+import { MobileActionBar } from '@/shared/ui/mobile-action-bar'
 import { z } from 'zod'
 import type { CreateClientInput } from '@/shared/types/domain'
 
@@ -56,7 +57,7 @@ export function ClientForm(props: ClientFormProps): JSX.Element {
 
   return (
     <form
-      className="space-y-4"
+      className="space-y-4 pb-16 lg:pb-0"
       onSubmit={async (e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -78,7 +79,7 @@ export function ClientForm(props: ClientFormProps): JSX.Element {
         <label className="flex flex-col gap-1 sm:col-span-2" htmlFor={`${uid}-name`}>
           <span className="text-sm text-slate-600">Nombre</span>
           <input
-            className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring"
+            className="rounded border border-slate-300 bg-white px-3 py-3 text-slate-900 outline-none focus:ring focus:ring-blue-200"
             id={`${uid}-name`}
             value={values.name}
             onChange={(e) => handleChange('name', e.target.value)}
@@ -92,7 +93,7 @@ export function ClientForm(props: ClientFormProps): JSX.Element {
         <label className="flex flex-col gap-1" htmlFor={`${uid}-taxid`}>
           <span className="text-sm text-slate-600">RUC/CI</span>
           <input
-            className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring"
+            className="rounded border border-slate-300 bg-white px-3 py-3 text-slate-900 outline-none focus:ring focus:ring-blue-200"
             id={`${uid}-taxid`}
             value={values.taxId ?? ''}
             onChange={(e) => handleChange('taxId', e.target.value)}
@@ -106,7 +107,7 @@ export function ClientForm(props: ClientFormProps): JSX.Element {
         <label className="flex flex-col gap-1" htmlFor={`${uid}-phone`}>
           <span className="text-sm text-slate-600">Teléfono</span>
           <input
-            className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring"
+            className="rounded border border-slate-300 bg-white px-3 py-3 text-slate-900 outline-none focus:ring focus:ring-blue-200"
             id={`${uid}-phone`}
             value={values.phone ?? ''}
             onChange={(e) => handleChange('phone', e.target.value)}
@@ -121,7 +122,7 @@ export function ClientForm(props: ClientFormProps): JSX.Element {
           <span className="text-sm text-slate-600">Email</span>
           <input
             type="email"
-            className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring"
+            className="rounded border border-slate-300 bg-white px-3 py-3 text-slate-900 outline-none focus:ring focus:ring-blue-200"
             id={`${uid}-email`}
             value={values.email ?? ''}
             onChange={(e) => handleChange('email', e.target.value)}
@@ -133,11 +134,19 @@ export function ClientForm(props: ClientFormProps): JSX.Element {
         </label>
       </div>
 
-      <div className="flex justify-end gap-2">
+      {/* Desktop actions */}
+      <div className="hidden lg:flex justify-end gap-2">
         <button type="submit" disabled={pending} className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-500 disabled:opacity-60">
           {pending ? 'Guardando…' : 'Guardar'}
         </button>
       </div>
+
+      {/* Mobile sticky actions */}
+      <MobileActionBar>
+        <button type="submit" disabled={pending} className="w-full rounded bg-blue-600 px-4 py-3 text-white font-medium hover:bg-blue-500 disabled:opacity-60">
+          {pending ? 'Guardando…' : 'Guardar cliente'}
+        </button>
+      </MobileActionBar>
     </form>
   )
 }

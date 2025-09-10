@@ -159,7 +159,7 @@ export function ProductModal({ mode, open, onClose, productId, onSuccess }: Prod
   )
 
   return (
-    <Modal open={open} title={title} onClose={guardedClose} size="xl" footer={footer}>
+    <Modal open={open} title={title} onClose={guardedClose} size="xl" footer={footer} mobileFullScreen>
       {isEdit && isLoading ? (
         <div className="animate-pulse space-y-4">
           <div className="h-6 w-48 rounded bg-slate-200" />

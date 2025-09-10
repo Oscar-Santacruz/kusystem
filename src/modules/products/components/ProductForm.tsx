@@ -2,6 +2,7 @@ import { useEffect, useState, useId, type JSX } from 'react'
 import { z } from 'zod'
 import type { CreateProductInput } from '@/shared/types/domain'
 import { formatCurrency } from '@/shared/utils/format'
+import { MobileActionBar } from '@/shared/ui/mobile-action-bar'
 
 export interface ProductFormValues extends CreateProductInput {}
 
@@ -95,7 +96,10 @@ export function ProductForm(props: ProductFormProps): JSX.Element {
   return (
     <form
       id={formId}
-      className="flex flex-col md:flex-row gap-6"
+      className={[
+        'flex flex-col md:flex-row gap-6',
+        formId ? 'pb-0' : 'pb-20 lg:pb-0',
+      ].join(' ')}
       onSubmit={async (e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -397,6 +401,18 @@ export function ProductForm(props: ProductFormProps): JSX.Element {
           </div>
         </div>
       </div>
+      {/* Mobile sticky actions if not controlled by external modal footer */}
+      {!formId && (
+        <MobileActionBar>
+          <button
+            type="submit"
+            disabled={pending}
+            className="w-full rounded bg-blue-600 px-4 py-3 text-white font-medium hover:bg-blue-500 disabled:opacity-60"
+          >
+            {pending ? 'Guardando…' : 'Guardar producto'}
+          </button>
+        </MobileActionBar>
+      )}
     </form>
   )
 }

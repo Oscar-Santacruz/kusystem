@@ -2,11 +2,13 @@ import { type JSX, useEffect, useMemo, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuote } from '@/modules/quotes/hooks/useQuotes'
 import { QuotePrint } from '@/modules/quotes/components/QuotePrint'
+import { useCurrentOrganization } from '@/shared/hooks/useCurrentOrganization'
 
 export function QuotePreviewPage(): JSX.Element {
   const { id } = useParams<{ id: string }>()
   const { data, isLoading, isError, refetch } = useQuote(id)
   const printWrapperRef = useRef<HTMLDivElement>(null)
+  const { logoUrl: orgLogoUrl } = useCurrentOrganization()
 
   // Meta noindex para evitar indexación accidental
   useEffect(() => {
@@ -60,7 +62,7 @@ export function QuotePreviewPage(): JSX.Element {
       ) : data ? (
         <div className="bg-slate-950">
           <div ref={printWrapperRef}>
-            <QuotePrint id="print-sheet-preview" quote={data} />
+            <QuotePrint id="print-sheet-preview" quote={data} orgLogoUrl={orgLogoUrl ?? undefined} />
           </div>
         </div>
       ) : (
