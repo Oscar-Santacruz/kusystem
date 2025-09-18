@@ -1,7 +1,8 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
 import { RootLayout } from '@/layouts/root-layout'
 import { MainLayout } from '@/layouts/main-layout'
 import { WelcomePage } from '@/pages/welcome-page'
+import { PublicLandingPage } from '@/pages/public-landing'
 import { ProtectedRoute } from '@/auth/ProtectedRoute'
 import { OrgGuard } from '@/auth/OrgGuard'
 import { LoginPage } from '@/pages/login-page'
@@ -33,7 +34,7 @@ export const router = createBrowserRouter([
       { path: 'invitations/:token', element: <InvitationAcceptPage /> },
       {
         path: '',
-        element: <Navigate to="/main/welcome" replace />,
+        element: <PublicLandingPage />,
       },
       {
         path: 'main',
