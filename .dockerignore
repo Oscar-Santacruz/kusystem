@@ -1,0 +1,24 @@
+# Ignore node_modules, as it will be installed inside the container
+node_modules
+
+# Ignore pnpm store if it's in the project directory
+.pnpm-store
+
+# Ignore build output directory
+dist
+
+# Ignore environment files, but allow .env.production for the build
+.env*
+!.env.production
+
+# Ignore git files
+.git
+.gitignore
+
+# Ignore log files
+*.log
+
+# Ignore Docker-related files that shouldn't be in the image
+Dockerfile
+docker-compose.yml
+docker-compose.prod.yml
