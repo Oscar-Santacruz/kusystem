@@ -4,12 +4,30 @@ import type { Quote } from '@/modules/quotes/types'
 import QRCode from 'react-qr-code'
 import { getPublicQuoteUrl } from '@/modules/quotes/utils/public-url'
 
+const gsNumberFormatter = new Intl.NumberFormat('es-PY', {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+})
+
 function formatCurrency0(n?: number, currency = 'PYG'): string {
   if (n == null) return '-'
+  const value = Number(n)
+  if (!Number.isFinite(value)) return '-'
+
+  const normalizedCurrency = currency?.trim().toUpperCase()
+  if (!normalizedCurrency || normalizedCurrency === 'PYG' || normalizedCurrency === 'GS' || normalizedCurrency === 'GS.') {
+    return `Gs. ${gsNumberFormatter.format(value)}`
+  }
+
   try {
-    return new Intl.NumberFormat('es-PY', { style: 'currency', currency, maximumFractionDigits: 0, minimumFractionDigits: 0 }).format(n)
+    return new Intl.NumberFormat('es-PY', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+      minimumFractionDigits: 0,
+    }).format(value)
   } catch {
-    return new Intl.NumberFormat('es-PY', { maximumFractionDigits: 0, minimumFractionDigits: 0 }).format(n)
+    return `${currency} ${gsNumberFormatter.format(value)}`
   }
 }
 
