@@ -31,6 +31,13 @@ function formatCurrency0(n?: number, currency = 'PYG'): string {
   }
 }
 
+function formatCurrencyPlain0(n?: number): string {
+  if (n == null) return '-'
+  const value = Number(n)
+  if (!Number.isFinite(value)) return '-'
+  return gsNumberFormatter.format(value)
+}
+
 function formatQty0(n?: number): string {
   if (n == null) return '-'
   return new Intl.NumberFormat('es-PY', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
@@ -160,15 +167,15 @@ export const QuotePrint = forwardRef<HTMLDivElement, QuotePrintProps>(function Q
 
       {/* Tabla */}
       <div className="mt-4">
-        <table className="w-full border-collapse text-sm">
+        <table className="w-full border-collapse text-xs">
           <thead>
             <tr>
-              <th className="border-2 border-[#94a3b8] px-2 py-1 text-left">item</th>
-              <th className="border-2 border-[#94a3b8] px-2 py-1 text-left text-lg font-semibold">Descripcion</th>
-              <th className="border-2 border-[#94a3b8] px-2 py-1 text-center">un</th>
-              <th className="border-2 border-[#94a3b8] px-2 py-1 text-right">Cantidad</th>
-              <th className="border-2 border-[#94a3b8] px-2 py-1 text-right">P. unitario</th>
-              <th className="border-2 border-[#94a3b8] px-2 py-1 text-right">Precio total</th>
+              <th className="w-10 border-2 border-[#94a3b8] px-2 py-1 text-center">N°</th>
+              <th className="w-[80%] border-2 border-[#94a3b8] px-2 py-1 text-left text-lg font-semibold">Descripción</th>
+              <th className="w-16 border-2 border-[#94a3b8] px-2 py-1 text-center">U.M.</th>
+              <th className="w-20 border-2 border-[#94a3b8] px-2 py-1 text-right">Cant.</th>
+              <th className="w-28 border-2 border-[#94a3b8] px-2 py-1 text-right">P. unit.</th>
+              <th className="w-28 border-2 border-[#94a3b8] px-2 py-1 text-right">Subtotal</th>
             </tr>
           </thead>
           <tbody>
@@ -176,24 +183,24 @@ export const QuotePrint = forwardRef<HTMLDivElement, QuotePrintProps>(function Q
               const lineTotal = it.quantity * it.unitPrice - (it.discount ?? 0)
               return (
                 <tr key={idx}>
-                  <td className="border border-[#cbd5e1] px-2 py-1 align-top">{idx + 1}</td>
-                  <td className="border border-[#cbd5e1] px-2 py-1 align-top uppercase">{it.description}</td>
-                  <td className="border border-[#cbd5e1] px-2 py-1 text-center align-top">UN</td>
-                  <td className="border border-[#cbd5e1] px-2 py-1 text-right align-top">{formatQty0(it.quantity)}</td>
-                  <td className="border border-[#cbd5e1] px-2 py-1 text-right align-top">{formatCurrency0(it.unitPrice, data.currency)}</td>
-                  <td className="border border-[#cbd5e1] px-2 py-1 text-right align-top">{formatCurrency0(lineTotal, data.currency)}</td>
+                  <td className="w-14 border border-[#cbd5e1] px-2 py-1 text-center align-top">{idx + 1}</td>
+                  <td className="w-[80%] border border-[#cbd5e1] px-2 py-1 align-top uppercase">{it.description}</td>
+                  <td className="w-16 border border-[#cbd5e1] px-2 py-1 text-center align-top">UN</td>
+                  <td className="w-20 border border-[#cbd5e1] px-2 py-1 text-right align-top">{formatQty0(it.quantity)}</td>
+                  <td className="w-28 border border-[#cbd5e1] px-2 py-1 text-right align-top">{formatCurrencyPlain0(it.unitPrice)}</td>
+                  <td className="w-28 border border-[#cbd5e1] px-2 py-1 text-right align-top">{formatCurrencyPlain0(lineTotal)}</td>
                 </tr>
               )
             })}
             {data.items.length < 4
               ? Array.from({ length: 4 - data.items.length }).map((_, i) => (
                   <tr key={`empty-${i}`}>
+                    <td className="w-14 border border-[#cbd5e1] px-2 py-6 align-top">&nbsp;</td>
                     <td className="border border-[#cbd5e1] px-2 py-6 align-top">&nbsp;</td>
-                    <td className="border border-[#cbd5e1] px-2 py-6 align-top">&nbsp;</td>
-                    <td className="border border-[#cbd5e1] px-2 py-6" />
-                    <td className="border border-[#cbd5e1] px-2 py-6" />
-                    <td className="border border-[#cbd5e1] px-2 py-6" />
-                    <td className="border border-[#cbd5e1] px-2 py-6" />
+                    <td className="w-16 border border-[#cbd5e1] px-2 py-6" />
+                    <td className="w-20 border border-[#cbd5e1] px-2 py-6" />
+                    <td className="w-28 border border-[#cbd5e1] px-2 py-6" />
+                    <td className="w-28 border border-[#cbd5e1] px-2 py-6" />
                   </tr>
                 ))
               : null}
