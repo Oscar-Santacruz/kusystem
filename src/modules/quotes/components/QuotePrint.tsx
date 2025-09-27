@@ -175,7 +175,7 @@ export const QuotePrint = forwardRef<HTMLDivElement, QuotePrintProps>(function Q
               <th className="w-16 border-2 border-[#94a3b8] px-2 py-1 text-center">U.M.</th>
               <th className="w-20 border-2 border-[#94a3b8] px-2 py-1 text-right">Cant.</th>
               <th className="w-28 border-2 border-[#94a3b8] px-2 py-1 text-right">P. unit.</th>
-              <th className="w-28 border-2 border-[#94a3b8] px-2 py-1 text-right">Subtotal</th>
+              <th className="w-28 border-2 border-[#94a3b8] px-2 py-1 text-right">Precio Total</th>
             </tr>
           </thead>
           <tbody>
