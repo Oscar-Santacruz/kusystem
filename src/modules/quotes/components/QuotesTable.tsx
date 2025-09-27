@@ -105,8 +105,10 @@ export function QuotesTable({
       },
     },
     onPaginationChange: (updater) => {
-      // updater en controlled mode será un objeto PaginationState
-      onPaginationChange(updater as PaginationState)
+      // TanStack envía un Updater<PaginationState>: puede ser objeto o función.
+      const current = table.getState().pagination
+      const next = typeof updater === 'function' ? (updater as (old: PaginationState) => PaginationState)(current) : updater
+      onPaginationChange(next as PaginationState)
     },
     debugTable: false,
   })
