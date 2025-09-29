@@ -2,6 +2,7 @@ import { type JSX, useMemo, useRef } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuote } from '@/modules/quotes/hooks/useQuotes'
 import { QuotePrint } from '@/modules/quotes/components/QuotePrint'
+import { QuoteStatusActions } from '@/modules/quotes/components/QuoteStatusActions'
 import { useReactToPrint } from 'react-to-print'
 import { FaEdit, FaPrint, FaFilePdf, FaImage, FaWhatsapp, FaArrowLeft, FaLink } from 'react-icons/fa'
 import { getPublicQuoteUrl } from '@/modules/quotes/utils/public-url'
@@ -273,6 +274,13 @@ export function QuoteDetailPage(): JSX.Element {
         </div>
       ) : data ? (
         <div className="space-y-6">
+          {/* Acciones de estado */}
+          <QuoteStatusActions 
+            quoteId={id!} 
+            currentStatus={data.status} 
+            onStatusChanged={() => refetch()}
+          />
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <div className="text-slate-400 text-sm">Cliente</div>

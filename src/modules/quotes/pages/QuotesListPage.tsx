@@ -5,6 +5,8 @@ import { useToast } from '@/shared/ui/toast'
 import { DataTable } from '@/shared/components/DataTable'
 import type { ColumnDef, PaginationState } from '@tanstack/react-table'
 import type { Quote } from '@/modules/quotes/types'
+import { getStatusLabel, getStatusColor } from '@/modules/quotes/utils/status-colors'
+import { FaEye, FaPencilAlt, FaTrash } from 'react-icons/fa'
 
 // Hybrid pagination threshold
 const FETCH_ALL_LIMIT = 1000
@@ -110,7 +112,14 @@ export function QuotesListPage(): JSX.Element {
       header: 'Estado',
       accessorKey: 'status',
       meta: { filter: 'text' },
-      cell: (ctx) => ctx.row.original.status ?? 'draft',
+      cell: (ctx) => {
+        const status = ctx.row.original.status
+        return (
+          <span className={`inline-block rounded px-2 py-1 text-xs font-medium text-white ${getStatusColor(status)}`}>
+            {getStatusLabel(status)}
+          </span>
+        )
+      },
     },
     {
       header: 'Total',
@@ -133,16 +142,25 @@ export function QuotesListPage(): JSX.Element {
       cell: (ctx) => {
         const q = ctx.row.original
         return (
-          <div className="space-x-2 text-right">
-            <Link className="text-blue-400 hover:underline" to={`/main/quotes/${q.id}`}>
-              Ver
+          <div className="flex items-center justify-end gap-2">
+            <Link 
+              to={`/main/quotes/${q.id}`}
+              className="inline-flex items-center justify-center rounded p-2 text-blue-400 transition-colors hover:bg-blue-400/10"
+              title="Ver detalles"
+            >
+              <FaEye className="h-4 w-4" />
             </Link>
-            <Link className="text-amber-400 hover:underline" to={`/main/quotes/${q.id}/edit`}>
-              Editar
+            <Link 
+              to={`/main/quotes/${q.id}/edit`}
+              className="inline-flex items-center justify-center rounded p-2 text-amber-400 transition-colors hover:bg-amber-400/10"
+              title="Editar"
+            >
+              <FaPencilAlt className="h-4 w-4" />
             </Link>
             <button
-              className="text-red-400 hover:underline disabled:opacity-50"
+              className="inline-flex items-center justify-center rounded p-2 text-red-400 transition-colors hover:bg-red-400/10 disabled:opacity-50"
               disabled={del.isPending}
+              title="Eliminar"
               onClick={async () => {
                 if (!confirm('¿Eliminar presupuesto?')) return
                 try {
@@ -154,7 +172,7 @@ export function QuotesListPage(): JSX.Element {
                 }
               }}
             >
-              Eliminar
+              <FaTrash className="h-4 w-4" />
             </button>
           </div>
         )
@@ -166,12 +184,20 @@ export function QuotesListPage(): JSX.Element {
     <section className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold">Presupuestos</h2>
-        <Link
-          to="/main/quotes/new"
-          className="rounded bg-slate-700 px-3 py-1 text-white hover:bg-slate-600"
-        >
-          Nuevo
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            to="/main/quotes/analytics"
+            className="rounded bg-blue-700 px-3 py-1 text-white hover:bg-blue-600"
+          >
+            Dashboard
+          </Link>
+          <Link
+            to="/main/quotes/new"
+            className="rounded bg-slate-700 px-3 py-1 text-white hover:bg-slate-600"
+          >
+            Nuevo
+          </Link>
+        </div>
       </div>
 
       {isError && (

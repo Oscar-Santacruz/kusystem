@@ -7,6 +7,7 @@ import { ProductModal } from '@/modules/products/components/ProductModal'
 import { DataTable } from '@/shared/components/DataTable'
 import type { ColumnDef, PaginationState } from '@tanstack/react-table'
 import type { Product } from '@/shared/types/domain'
+import { FaPencilAlt, FaTrash } from 'react-icons/fa'
 
 // Hybrid pagination threshold
 const FETCH_ALL_LIMIT = 1000
@@ -208,13 +209,19 @@ export function ProductsListPage(): JSX.Element {
             cell: (ctx) => {
               const p = ctx.row.original
               return (
-                <div className="space-x-2 text-right">
-                  <button type="button" className="text-blue-400 hover:underline" onClick={() => openEditModal(p.id)}>
-                    Editar
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openEditModal(p.id)}
+                    className="inline-flex items-center justify-center rounded p-2 text-amber-400 transition-colors hover:bg-amber-400/10"
+                    title="Editar"
+                  >
+                    <FaPencilAlt className="h-4 w-4" />
                   </button>
                   <button
-                    className="text-red-400 hover:underline disabled:opacity-50"
+                    className="inline-flex items-center justify-center rounded p-2 text-red-400 transition-colors hover:bg-red-400/10 disabled:opacity-50"
                     disabled={del.isPending}
+                    title="Eliminar"
                     onClick={async () => {
                       if (!confirm('¿Eliminar producto?')) return
                       try {
@@ -225,7 +232,7 @@ export function ProductsListPage(): JSX.Element {
                       }
                     }}
                   >
-                    Eliminar
+                    <FaTrash className="h-4 w-4" />
                   </button>
                 </div>
               )
