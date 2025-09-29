@@ -35,5 +35,8 @@
 
 ## Referencias
 - Componente genérico: `src/shared/components/DataTable.tsx`.
-- Implementaciones: `modules/clients/pages/ClientsListPage.tsx`, `modules/products/pages/ProductsListPage.tsx`.
-- Pendiente de unificar: `modules/quotes/components/QuotesTable.tsx` (puede migrarse a `DataTable`).
+- Implementaciones: 
+  - `modules/quotes/pages/QuotesListPage.tsx`
+  - `modules/clients/pages/ClientsListPage.tsx`
+  - `modules/products/pages/ProductsListPage.tsx`
+- **Todos los módulos usan el mismo `DataTable` genérico**.

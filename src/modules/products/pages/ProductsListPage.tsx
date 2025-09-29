@@ -8,6 +8,9 @@ import { DataTable } from '@/shared/components/DataTable'
 import type { ColumnDef, PaginationState } from '@tanstack/react-table'
 import type { Product } from '@/shared/types/domain'
 
+// Hybrid pagination threshold
+const FETCH_ALL_LIMIT = 1000
+
 export function ProductsListPage(): JSX.Element {
   const { success } = useToast()
   const [sp, setSp] = useSearchParams()
@@ -18,10 +21,10 @@ export function ProductsListPage(): JSX.Element {
 
   // Viewport-aware options and defaults (SSR-safe)
   const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : false
-  const MOBILE_OPTIONS = [10, 25, 50]
-  const DESKTOP_OPTIONS = [10, 25, 50, 100]
+  const MOBILE_OPTIONS = [5, 15, 30]
+  const DESKTOP_OPTIONS = [15, 30, 50, 100]
   const PAGE_SIZE_OPTIONS = isMobile ? MOBILE_OPTIONS : DESKTOP_OPTIONS
-  const DEFAULT_PAGE_SIZE = isMobile ? 10 : 25
+  const DEFAULT_PAGE_SIZE = isMobile ? 5 : 30
 
   function usePersistentState<T>(key: string, initial: T) {
     const [state, setState] = useState<T>(() => {
@@ -55,7 +58,22 @@ export function ProductsListPage(): JSX.Element {
   const page = pageIndex + 1
   const debounced = useDebouncedValue(search, 300)
 
+  // First fetch to get total
   const { data, isPending, isFetching } = useProducts({ page, pageSize, search: debounced || undefined })
+  const total = data?.total ?? 0
+
+  // Hybrid strategy: if total ≤ 1000, fetch all and paginate client-side
+  const shouldFetchAll = useMemo(() => total > 0 && total <= FETCH_ALL_LIMIT, [total])
+  
+  // Re-fetch with all data if needed
+  const { data: allData } = useProducts(
+    { page: 1, pageSize: total, search: debounced || undefined },
+    { enabled: shouldFetchAll && total > 0 }
+  )
+  
+  const effectiveData = shouldFetchAll && allData ? allData : data
+  const items = effectiveData?.data ?? []
+  
   const del = useDeleteProduct()
 
   // URL-driven modal state
@@ -65,8 +83,6 @@ export function ProductsListPage(): JSX.Element {
   const isProductModalOpen = useMemo(() => modal === 'product' && (mode === 'create' || (mode === 'edit' && !!editId)), [modal, mode, editId])
   const isCreate = mode === 'create'
   const isEdit = mode === 'edit'
-  const items = data?.data ?? []
-  const total = data?.total ?? 0
 
   useEffect(() => {
     const next = new URLSearchParams(sp)
@@ -128,24 +144,6 @@ export function ProductsListPage(): JSX.Element {
         data={items}
         columns={useMemo<ColumnDef<Product>[]>(() => [
           {
-            header: 'Nombre',
-            accessorKey: 'name',
-            meta: { filter: 'text' },
-            cell: (ctx) => {
-              const p = ctx.row.original
-              return (
-                <div className="flex items-center gap-2">
-                  <span className="truncate">{p.name}</span>
-                  {p.priceIncludesTax ? (
-                    <span className="shrink-0 rounded-full border border-emerald-600/40 bg-emerald-950/50 px-2 py-0.5 text-[10px] text-emerald-300">
-                      IVA inc.
-                    </span>
-                  ) : null}
-                </div>
-              )
-            },
-          },
-          {
             header: 'SKU',
             accessorKey: 'sku',
             meta: { filter: 'text' },
@@ -154,6 +152,31 @@ export function ProductsListPage(): JSX.Element {
               if (!s) return '-'
               const n = Number(s)
               return Number.isFinite(n) ? n.toLocaleString('es-PY') : s
+            },
+          },
+          {
+            header: 'Nombre',
+            accessorKey: 'name',
+            meta: { filter: 'text' },
+            cell: (ctx) => {
+              const p = ctx.row.original
+              const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : false
+              const displayName = !isMobile && p.name.length > 35 ? `${p.name.slice(0, 35)}...` : p.name
+              return (
+                <div className="flex items-center gap-2">
+                  <span 
+                    className={isMobile ? 'break-words' : 'truncate'} 
+                    title={!isMobile ? p.name : undefined}
+                  >
+                    {displayName}
+                  </span>
+                  {p.priceIncludesTax ? (
+                    <span className="shrink-0 rounded-full border border-emerald-600/40 bg-emerald-950/50 px-2 py-0.5 text-[10px] text-emerald-300">
+                      IVA inc.
+                    </span>
+                  ) : null}
+                </div>
+              )
             },
           },
           { header: 'Unidad', accessorKey: 'unit', meta: { filter: 'text' }, cell: (ctx) => ctx.row.original.unit || '-' },
@@ -216,6 +239,7 @@ export function ProductsListPage(): JSX.Element {
           setPageSize(next.pageSize)
         }}
         showPageSize={true}
+        useClientPagination={shouldFetchAll}
       />
 
       {/* Modal unificado (crear/editar) */}

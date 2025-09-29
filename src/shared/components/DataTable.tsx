@@ -3,6 +3,7 @@ import {
   useReactTable,
   getCoreRowModel,
   getFilteredRowModel,
+  getPaginationRowModel,
   flexRender,
   type ColumnDef,
   type PaginationState,
@@ -20,6 +21,8 @@ export interface DataTableProps<T extends object> {
   // Filters (optional controlled). If not provided, DataTable manages its own state.
   columnFilters?: ColumnFiltersState
   onColumnFiltersChange?: (updater: ColumnFiltersState) => void
+  // Hybrid pagination: if true, use client-side pagination
+  useClientPagination?: boolean
 }
 
 export function DataTable<T extends object>({
@@ -32,11 +35,12 @@ export function DataTable<T extends object>({
   className,
   columnFilters,
   onColumnFiltersChange,
+  useClientPagination = false,
 }: DataTableProps<T>): JSX.Element {
   // Viewport-aware options (SSR-safe)
   const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : false
-  const MOBILE_OPTIONS = [10, 25, 50]
-  const DESKTOP_OPTIONS = [10, 25, 50, 100]
+  const MOBILE_OPTIONS = [5, 15, 30]
+  const DESKTOP_OPTIONS = [15, 30, 50, 100]
   const PAGE_SIZE_OPTIONS = isMobile ? MOBILE_OPTIONS : DESKTOP_OPTIONS
   const minOption = Math.min(...PAGE_SIZE_OPTIONS)
 
@@ -49,8 +53,11 @@ export function DataTable<T extends object>({
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    manualPagination: true,
-    pageCount: Math.max(1, Math.ceil((pagination.total || 0) / (pagination.pageSize || 10))),
+    getPaginationRowModel: useClientPagination ? getPaginationRowModel() : undefined,
+    manualPagination: !useClientPagination,
+    pageCount: useClientPagination
+      ? undefined
+      : Math.max(1, Math.ceil((pagination.total || 0) / (pagination.pageSize || 10))),
     state: {
       pagination: {
         pageIndex: pagination.pageIndex,
