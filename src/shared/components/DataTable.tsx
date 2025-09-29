@@ -1,5 +1,4 @@
 import { type JSX, useState } from 'react'
-import { Link } from 'react-router-dom'
 import {
   useReactTable,
   getCoreRowModel,
@@ -7,102 +6,43 @@ import {
   flexRender,
   type ColumnDef,
   type PaginationState,
+  type ColumnFiltersState,
 } from '@tanstack/react-table'
-import type { Quote } from '@/modules/quotes/types'
 
-export interface QuotesTableProps {
-  data: Quote[]
+export interface DataTableProps<T extends object> {
+  data: T[]
+  columns: ColumnDef<T, any>[]
   isLoading?: boolean
   pagination: { pageIndex: number; pageSize: number; total: number }
   onPaginationChange: (updater: PaginationState) => void
-  onDelete: (id: string) => Promise<void>
-  deletePending?: boolean
   showPageSize?: boolean
+  className?: string
+  // Filters (optional controlled). If not provided, DataTable manages its own state.
+  columnFilters?: ColumnFiltersState
+  onColumnFiltersChange?: (updater: ColumnFiltersState) => void
 }
 
-export function QuotesTable({
+export function DataTable<T extends object>({
   data,
+  columns,
   isLoading = false,
   pagination,
   onPaginationChange,
-  onDelete,
-  deletePending = false,
   showPageSize = true,
-}: QuotesTableProps): JSX.Element {
-  const [columnFilters, setColumnFilters] = useState<any[]>([])
-
-  // Viewport-aware options (SSR-safe) for page size selector
+  className,
+  columnFilters,
+  onColumnFiltersChange,
+}: DataTableProps<T>): JSX.Element {
+  // Viewport-aware options (SSR-safe)
   const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : false
-  const MOBILE_OPTIONS = [5, 10, 25]
+  const MOBILE_OPTIONS = [10, 25, 50]
   const DESKTOP_OPTIONS = [10, 25, 50, 100]
   const PAGE_SIZE_OPTIONS = isMobile ? MOBILE_OPTIONS : DESKTOP_OPTIONS
   const minOption = Math.min(...PAGE_SIZE_OPTIONS)
 
-  const columns: ColumnDef<Quote>[] = [
-    {
-      header: '#',
-      accessorKey: 'number',
-      cell: (ctx) => {
-        const v = ctx.row.original.number
-        const id = ctx.row.original.id
-        const digits = String(v ?? '').replace(/\D+/g, '')
-        return <span>{digits || id.slice(0, 6)}</span>
-      },
-    },
-    {
-      header: 'Cliente',
-      accessorKey: 'customerName',
-      cell: (info) => info.getValue() as any,
-    },
-    {
-      header: 'Sucursal',
-      accessorKey: 'branchName',
-      cell: (ctx) => ctx.row.original.branchName ?? '—',
-    },
-    {
-      header: 'Estado',
-      accessorKey: 'status',
-      cell: (ctx) => ctx.row.original.status ?? 'draft',
-    },
-    {
-      header: 'Total',
-      accessorKey: 'total',
-      cell: (ctx) => {
-        const n = Number(ctx.row.original.total)
-        if (!Number.isFinite(n)) return '-'
-        return n.toLocaleString('es-PY', {
-          style: 'currency',
-          currency: 'PYG',
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-        })
-      },
-    },
-    {
-      id: 'actions',
-      header: () => <div className="text-right">Acciones</div>,
-      cell: (ctx) => {
-        const q = ctx.row.original
-        return (
-          <div className="space-x-2 text-right">
-            <Link className="text-blue-400 hover:underline" to={`/main/quotes/${q.id}`}>
-              Ver
-            </Link>
-            <Link className="text-amber-400 hover:underline" to={`/main/quotes/${q.id}/edit`}>
-              Editar
-            </Link>
-            <button
-              className="text-red-400 hover:underline disabled:opacity-50"
-              disabled={deletePending}
-              onClick={() => onDelete(q.id)}
-            >
-              Eliminar
-            </button>
-          </div>
-        )
-      },
-    },
-  ]
+  // Column filters state (uncontrolled fallback)
+  const [internalFilters, setInternalFilters] = useState<ColumnFiltersState>([])
+  const effectiveFilters = columnFilters ?? internalFilters
 
   const table = useReactTable({
     data,
@@ -116,26 +56,33 @@ export function QuotesTable({
         pageIndex: pagination.pageIndex,
         pageSize: pagination.pageSize,
       },
-      columnFilters,
+      columnFilters: effectiveFilters,
     },
     onPaginationChange: (updater) => {
-      // TanStack envía un Updater<PaginationState>: puede ser objeto o función.
       const current = table.getState().pagination
       const next = typeof updater === 'function' ? (updater as (old: PaginationState) => PaginationState)(current) : updater
       onPaginationChange(next as PaginationState)
     },
     onColumnFiltersChange: (updater) => {
-      setColumnFilters(updater as any[])
+      if (onColumnFiltersChange) {
+        onColumnFiltersChange(updater as ColumnFiltersState)
+      } else {
+        setInternalFilters(updater as ColumnFiltersState)
+      }
     },
     debugTable: false,
   })
 
+  // Helper to render filter UI per column based on meta
+  type FilterMeta = { filter?: 'text' | 'select'; options?: Array<{ label: string; value: string }> }
+  const headerGroups = table.getHeaderGroups()
+
   return (
-    <div className="space-y-3">
+    <div className={className ?? 'space-y-3'}>
       <div className="overflow-x-auto rounded border border-slate-700/50">
         <table className="min-w-full text-left text-sm">
           <thead className="bg-slate-800/60 text-slate-300">
-            {table.getHeaderGroups().map((hg) => (
+            {headerGroups.map((hg) => (
               <tr key={hg.id}>
                 {hg.headers.map((header) => (
                   <th key={header.id} className={`px-3 py-2 ${header.column.id === 'actions' ? 'text-right' : ''}`}>
@@ -146,15 +93,35 @@ export function QuotesTable({
                 ))}
               </tr>
             ))}
+            {/* Filtros por columna (segunda fila de header) */}
             <tr>
-              {table.getHeaderGroups()[0]?.headers.map((header) => {
+              {headerGroups[0]?.headers.map((header) => {
                 const col = header.column
-                if (col.id === 'actions') return <th key={`f-${header.id}`} className="px-3 py-1" />
-                const v = (col.getFilterValue() as string) ?? ''
+                const meta = (col.columnDef.meta as FilterMeta | undefined) ?? {}
+                const canFilter = !!meta.filter && col.getCanFilter() && col.id !== 'actions'
+                if (!canFilter) return <th key={`f-${header.id}`} className="px-3 py-1" />
+                const value = (col.getFilterValue() as string) ?? ''
+                if (meta.filter === 'select' && meta.options && meta.options.length > 0) {
+                  return (
+                    <th key={`f-${header.id}`} className="px-3 py-1">
+                      <select
+                        className="w-full rounded border border-slate-700/60 bg-slate-800/60 px-2 py-1 text-slate-200"
+                        value={value}
+                        onChange={(e) => col.setFilterValue(e.target.value || undefined)}
+                      >
+                        <option value="">Todos</option>
+                        {meta.options.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </th>
+                  )
+                }
+                // default text filter
                 return (
                   <th key={`f-${header.id}`} className="px-3 py-1">
                     <input
-                      value={v}
+                      value={value}
                       onChange={(e) => col.setFilterValue(e.target.value || undefined)}
                       placeholder="Filtrar…"
                       className="w-full rounded border border-slate-700/60 bg-slate-800/60 px-2 py-1 text-slate-200 placeholder:text-slate-500"
@@ -176,7 +143,7 @@ export function QuotesTable({
             ) : data.length === 0 ? (
               <tr className="border-t border-slate-800/60">
                 <td className="px-3 py-6 text-center text-slate-400" colSpan={columns.length}>
-                  No hay presupuestos.
+                  Sin resultados.
                 </td>
               </tr>
             ) : (
@@ -210,7 +177,6 @@ export function QuotesTable({
                 value={table.getState().pagination.pageSize}
                 onChange={(e) => {
                   const v = Number(e.target.value)
-                  // Resetear a la primera página para evitar inconsistencias
                   table.setPageIndex(0)
                   table.setPageSize(v)
                 }}
