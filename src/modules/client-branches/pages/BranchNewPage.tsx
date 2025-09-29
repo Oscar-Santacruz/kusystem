@@ -11,12 +11,12 @@ export function BranchNewPage(): JSX.Element {
   const { success } = useToast()
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Nueva sucursal</h2>
+        <h2 className="text-2xl font-semibold text-slate-200">Nueva sucursal</h2>
       </div>
 
-      <div className="rounded border border-slate-200 bg-white/50 p-4">
+      <div className="rounded border border-slate-700/50 bg-slate-800/30 p-6">
         <BranchForm
           pending={create.isPending}
           onSubmit={async (vals) => {

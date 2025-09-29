@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData, type UseQueryOptions } from '@tanstack/react-query'
 import { ApiInstance } from '@/services/api'
 import type { Paginated } from '@/shared/types/api'
 import type { Product, CreateProductInput, UpdateProductInput } from '@/shared/types/domain'
@@ -17,7 +17,10 @@ const keys = {
   detail: (id: string) => [...keys.all, 'detail', id] as const,
 }
 
-export function useProducts(params: ListParams = { page: 1, pageSize: 20 }) {
+export function useProducts(
+  params: ListParams = { page: 1, pageSize: 20 },
+  options?: Omit<UseQueryOptions<Paginated<Product>>, 'queryKey' | 'queryFn'>
+) {
   const { page = 1, pageSize = 20, search } = params
   return useQuery({
     queryKey: keys.list(params),
@@ -27,6 +30,7 @@ export function useProducts(params: ListParams = { page: 1, pageSize: 20 }) {
     },
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
+    ...options,
   })
 }
 

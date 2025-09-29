@@ -12,14 +12,14 @@ export function BranchEditPage(): JSX.Element {
   const { success } = useToast()
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Editar sucursal</h2>
+        <h2 className="text-2xl font-semibold text-slate-200">Editar sucursal</h2>
       </div>
 
-      <div className="rounded border border-slate-200 bg-white/50 p-4">
+      <div className="rounded border border-slate-700/50 bg-slate-800/30 p-6">
         {isPending && !data ? (
-          <div className="text-slate-500">Cargando…</div>
+          <div className="text-slate-400">Cargando…</div>
         ) : data ? (
           <BranchForm
             initialValues={{ name: data.name, address: data.address ?? '' }}
@@ -33,7 +33,7 @@ export function BranchEditPage(): JSX.Element {
             onCancel={() => navigate(-1)}
           />
         ) : (
-          <div className="text-red-500">No se encontró la sucursal</div>
+          <div className="text-red-400">No se encontró la sucursal</div>
         )}
       </div>
     </section>

@@ -1,8 +1,15 @@
-import { type JSX, useEffect, useState } from 'react'
+import { type JSX, useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuotes, useDeleteQuote } from '@/modules/quotes/hooks/useQuotes'
 import { useToast } from '@/shared/ui/toast'
-import { QuotesTable } from '@/modules/quotes/components/QuotesTable'
+import { DataTable } from '@/shared/components/DataTable'
+import type { ColumnDef, PaginationState } from '@tanstack/react-table'
+import type { Quote } from '@/modules/quotes/types'
+import { getStatusLabel, getStatusColor } from '@/modules/quotes/utils/status-colors'
+import { FaEye, FaPencilAlt, FaTrash } from 'react-icons/fa'
+
+// Hybrid pagination threshold
+const FETCH_ALL_LIMIT = 1000
 
 export function QuotesListPage(): JSX.Element {
   // TanStack Table usa pageIndex 0-based; nuestro backend usa page 1-based
@@ -10,10 +17,10 @@ export function QuotesListPage(): JSX.Element {
 
   // Viewport-aware options and defaults (SSR-safe)
   const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : false
-  const MOBILE_OPTIONS = [10, 25, 50]
-  const DESKTOP_OPTIONS = [10, 25, 50, 100]
+  const MOBILE_OPTIONS = [5, 15, 30]
+  const DESKTOP_OPTIONS = [15, 30, 50, 100]
   const PAGE_SIZE_OPTIONS = isMobile ? MOBILE_OPTIONS : DESKTOP_OPTIONS
-  const DEFAULT_PAGE_SIZE = isMobile ? 10 : 25
+  const DEFAULT_PAGE_SIZE = isMobile ? 5 : 30
 
   // Persistent state hook stored in localStorage with try/catch
   function usePersistentState<T>(key: string, initial: T) {
@@ -55,20 +62,142 @@ export function QuotesListPage(): JSX.Element {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMobile])
 
-  const { data, isLoading, isError, refetch } = useQuotes({ page: pageIndex + 1, pageSize })
+  // First fetch to get total
+  const { data, isLoading, isError, refetch } = useQuotes({ 
+    page: pageIndex + 1, 
+    pageSize 
+  })
+  
+  const total = data?.total ?? 0
+
+  // Hybrid strategy: if total ≤ 200, fetch all and paginate client-side
+  const shouldFetchAll = useMemo(() => total > 0 && total <= FETCH_ALL_LIMIT, [total])
+  
+  // Re-fetch with all data if needed
+  const { data: allData } = useQuotes(
+    { page: 1, pageSize: total },
+    { enabled: shouldFetchAll && total > 0 }
+  )
+  
+  const effectiveData = shouldFetchAll && allData ? allData : data
+  
   const del = useDeleteQuote()
   const { success, error } = useToast()
+
+  const columns: ColumnDef<Quote>[] = useMemo(() => [
+    {
+      header: '#',
+      accessorKey: 'number',
+      meta: { filter: 'text' },
+      cell: (ctx) => {
+        const v = ctx.row.original.number
+        const id = ctx.row.original.id
+        const digits = String(v ?? '').replace(/\D+/g, '')
+        return <span>{digits || id.slice(0, 6)}</span>
+      },
+    },
+    {
+      header: 'Cliente',
+      accessorKey: 'customerName',
+      meta: { filter: 'text' },
+      cell: (info) => info.getValue() as any,
+    },
+    {
+      header: 'Sucursal',
+      accessorKey: 'branchName',
+      meta: { filter: 'text' },
+      cell: (ctx) => ctx.row.original.branchName ?? '—',
+    },
+    {
+      header: 'Estado',
+      accessorKey: 'status',
+      meta: { filter: 'text' },
+      cell: (ctx) => {
+        const status = ctx.row.original.status
+        return (
+          <span className={`inline-block rounded px-2 py-1 text-xs font-medium text-white ${getStatusColor(status)}`}>
+            {getStatusLabel(status)}
+          </span>
+        )
+      },
+    },
+    {
+      header: 'Total',
+      accessorKey: 'total',
+      meta: { filter: 'text' },
+      cell: (ctx) => {
+        const n = Number(ctx.row.original.total)
+        if (!Number.isFinite(n)) return '-'
+        return n.toLocaleString('es-PY', {
+          style: 'currency',
+          currency: 'PYG',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        })
+      },
+    },
+    {
+      id: 'actions',
+      header: () => <div className="text-right">Acciones</div>,
+      cell: (ctx) => {
+        const q = ctx.row.original
+        return (
+          <div className="flex items-center justify-end gap-2">
+            <Link 
+              to={`/main/quotes/${q.id}`}
+              className="inline-flex items-center justify-center rounded p-2 text-blue-400 transition-colors hover:bg-blue-400/10"
+              title="Ver detalles"
+            >
+              <FaEye className="h-4 w-4" />
+            </Link>
+            <Link 
+              to={`/main/quotes/${q.id}/edit`}
+              className="inline-flex items-center justify-center rounded p-2 text-amber-400 transition-colors hover:bg-amber-400/10"
+              title="Editar"
+            >
+              <FaPencilAlt className="h-4 w-4" />
+            </Link>
+            <button
+              className="inline-flex items-center justify-center rounded p-2 text-red-400 transition-colors hover:bg-red-400/10 disabled:opacity-50"
+              disabled={del.isPending}
+              title="Eliminar"
+              onClick={async () => {
+                if (!confirm('¿Eliminar presupuesto?')) return
+                try {
+                  await del.mutateAsync(q.id)
+                  success('Presupuesto eliminado')
+                  await refetch()
+                } catch (e: any) {
+                  error(e?.message || 'No se pudo eliminar el presupuesto')
+                }
+              }}
+            >
+              <FaTrash className="h-4 w-4" />
+            </button>
+          </div>
+        )
+      },
+    },
+  ], [del.isPending, success, error, refetch])
 
   return (
     <section className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold">Presupuestos</h2>
-        <Link
-          to="/main/quotes/new"
-          className="rounded bg-slate-700 px-3 py-1 text-white hover:bg-slate-600"
-        >
-          Nuevo
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            to="/main/quotes/analytics"
+            className="rounded bg-blue-700 px-3 py-1 text-white hover:bg-blue-600"
+          >
+            Dashboard
+          </Link>
+          <Link
+            to="/main/quotes/new"
+            className="rounded bg-slate-700 px-3 py-1 text-white hover:bg-slate-600"
+          >
+            Nuevo
+          </Link>
+        </div>
       </div>
 
       {isError && (
@@ -77,29 +206,21 @@ export function QuotesListPage(): JSX.Element {
         </div>
       )}
 
-      <QuotesTable
-        data={data?.data ?? []}
+      <DataTable<Quote>
+        data={effectiveData?.data ?? []}
+        columns={columns}
         isLoading={isLoading}
         pagination={{
           pageIndex,
           pageSize,
-          total: data?.total ?? 0,
+          total: effectiveData?.total ?? 0,
         }}
-        onPaginationChange={({ pageIndex: pi, pageSize: ps }) => {
-          setPageIndex(pi)
-          setPageSize(ps)
+        onPaginationChange={(next: PaginationState) => {
+          setPageIndex(next.pageIndex)
+          setPageSize(next.pageSize)
         }}
-        onDelete={async (id: string) => {
-          if (!confirm('¿Eliminar presupuesto?')) return
-          try {
-            await del.mutateAsync(id)
-            success('Presupuesto eliminado')
-            await refetch()
-          } catch (e: any) {
-            error(e?.message || 'No se pudo eliminar el presupuesto')
-          }
-        }}
-        deletePending={del.isPending}
+        showPageSize={true}
+        useClientPagination={shouldFetchAll}
       />
     </section>
   )

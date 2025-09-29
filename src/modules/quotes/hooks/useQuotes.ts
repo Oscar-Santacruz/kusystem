@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@tanstack/react-query'
 import { ApiInstance } from '@/services/api'
 import type { CreateQuoteInput, Paginated, Quote, UpdateQuoteInput } from '@/modules/quotes/types'
 
@@ -47,7 +47,10 @@ function stripEmptyStrings<T extends Record<string, any>>(obj: T): T {
   return out as T
 }
 
-export function useQuotes(params: ListParams = { page: 1, pageSize: 10 }) {
+export function useQuotes(
+  params: ListParams = { page: 1, pageSize: 10 },
+  options?: Omit<UseQueryOptions<Paginated<Quote>>, 'queryKey' | 'queryFn'>
+) {
   const { page = 1, pageSize = 10, search } = params
   return useQuery({
     queryKey: keys.list(params),
@@ -57,6 +60,7 @@ export function useQuotes(params: ListParams = { page: 1, pageSize: 10 }) {
       })
       return data
     },
+    ...options,
   })
 }
 

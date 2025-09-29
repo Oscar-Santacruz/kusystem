@@ -6,6 +6,10 @@ import { useToast } from '@/shared/ui/toast'
 import { DataTable } from '@/shared/components/DataTable'
 import type { ColumnDef, PaginationState } from '@tanstack/react-table'
 import type { Client } from '@/shared/types/domain'
+import { FaPencilAlt, FaBuilding, FaTrash } from 'react-icons/fa'
+
+// Hybrid pagination threshold
+const FETCH_ALL_LIMIT = 1000
 
 export function ClientsListPage(): JSX.Element {
   const { success } = useToast()
@@ -17,10 +21,10 @@ export function ClientsListPage(): JSX.Element {
 
   // Viewport-aware options and defaults (SSR-safe)
   const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : false
-  const MOBILE_OPTIONS = [10, 25, 50]
-  const DESKTOP_OPTIONS = [10, 25, 50, 100]
+  const MOBILE_OPTIONS = [5, 15, 30]
+  const DESKTOP_OPTIONS = [15, 30, 50, 100]
   const PAGE_SIZE_OPTIONS = isMobile ? MOBILE_OPTIONS : DESKTOP_OPTIONS
-  const DEFAULT_PAGE_SIZE = isMobile ? 10 : 25
+  const DEFAULT_PAGE_SIZE = isMobile ? 5 : 30
 
   function usePersistentState<T>(key: string, initial: T) {
     const [state, setState] = useState<T>(() => {
@@ -53,11 +57,24 @@ export function ClientsListPage(): JSX.Element {
 
   const page = pageIndex + 1 // backend 1-based
   const debounced = useDebouncedValue(search, 300)
+  
+  // First fetch to get total
   const { data, isPending, isFetching } = useClients({ page, pageSize, search: debounced || undefined })
-  const del = useDeleteClient()
-
-  const items = data?.data ?? []
   const total = data?.total ?? 0
+
+  // Hybrid strategy: if total ≤ 1000, fetch all and paginate client-side
+  const shouldFetchAll = useMemo(() => total > 0 && total <= FETCH_ALL_LIMIT, [total])
+  
+  // Re-fetch with all data if needed
+  const { data: allData } = useClients(
+    { page: 1, pageSize: total, search: debounced || undefined },
+    { enabled: shouldFetchAll && total > 0 }
+  )
+  
+  const effectiveData = shouldFetchAll && allData ? allData : data
+  const items = effectiveData?.data ?? []
+  
+  const del = useDeleteClient()
 
   useEffect(() => {
     const next = new URLSearchParams()
@@ -77,16 +94,25 @@ export function ClientsListPage(): JSX.Element {
       cell: (ctx) => {
         const c = ctx.row.original
         return (
-          <div className="space-x-2 text-right">
-            <Link className="text-blue-400 hover:underline" to={`/main/clients/${c.id}/edit`}>
-              Editar
+          <div className="flex items-center justify-end gap-2">
+            <Link
+              to={`/main/clients/${c.id}/edit`}
+              className="inline-flex items-center justify-center rounded p-2 text-amber-400 transition-colors hover:bg-amber-400/10"
+              title="Editar"
+            >
+              <FaPencilAlt className="h-4 w-4" />
             </Link>
-            <Link className="text-amber-400 hover:underline" to={`/main/clients/${c.id}/branches`}>
-              Sucursales
+            <Link
+              to={`/main/clients/${c.id}/branches`}
+              className="inline-flex items-center justify-center rounded p-2 text-blue-400 transition-colors hover:bg-blue-400/10"
+              title="Sucursales"
+            >
+              <FaBuilding className="h-4 w-4" />
             </Link>
             <button
-              className="text-red-400 hover:underline disabled:opacity-50"
+              className="inline-flex items-center justify-center rounded p-2 text-red-400 transition-colors hover:bg-red-400/10 disabled:opacity-50"
               disabled={del.isPending}
+              title="Eliminar"
               onClick={async () => {
                 if (!confirm('¿Eliminar cliente?')) return
                 try {
@@ -97,7 +123,7 @@ export function ClientsListPage(): JSX.Element {
                 }
               }}
             >
-              Eliminar
+              <FaTrash className="h-4 w-4" />
             </button>
           </div>
         )
@@ -136,6 +162,7 @@ export function ClientsListPage(): JSX.Element {
           setPageSize(next.pageSize)
         }}
         showPageSize={true}
+        useClientPagination={shouldFetchAll}
       />
     </section>
   )

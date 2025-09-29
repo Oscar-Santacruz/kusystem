@@ -58,29 +58,29 @@ export function BranchForm(props: BranchFormProps): JSX.Element {
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
-      <div className="grid gap-3">
-        <label className="flex flex-col gap-1">
-          <span className="text-sm text-slate-600">Nombre</span>
+      <div className="grid gap-4">
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium text-slate-300">Nombre</span>
           <input
             id="name"
-            className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring"
+            className="rounded border border-slate-600 bg-slate-700 px-3 py-2 text-slate-200 placeholder-slate-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             value={values.name}
             onChange={(e) => handleChange('name', e.target.value)}
             placeholder="Sucursal principal"
           />
-          {errors.name ? <span className="text-xs text-red-600">{errors.name}</span> : null}
+          {errors.name ? <span className="text-xs text-red-400">{errors.name}</span> : null}
         </label>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-sm text-slate-600">Dirección (opcional)</span>
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium text-slate-300">Dirección (opcional)</span>
           <input
             id="address"
-            className="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring"
+            className="rounded border border-slate-600 bg-slate-700 px-3 py-2 text-slate-200 placeholder-slate-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             value={values.address ?? ''}
             onChange={(e) => handleChange('address', e.target.value)}
             placeholder="Calle 123, Ciudad"
           />
-          {errors.address ? <span className="text-xs text-red-600">{errors.address}</span> : null}
+          {errors.address ? <span className="text-xs text-red-400">{errors.address}</span> : null}
         </label>
       </div>
 
@@ -88,7 +88,7 @@ export function BranchForm(props: BranchFormProps): JSX.Element {
         <button
           type="submit"
           disabled={pending}
-          className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-500 disabled:opacity-60"
+          className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         >
           {pending ? 'Guardando…' : 'Guardar'}
         </button>
@@ -96,7 +96,7 @@ export function BranchForm(props: BranchFormProps): JSX.Element {
           <button
             type="button"
             onClick={onCancel}
-            className="rounded border border-slate-300 px-4 py-2 hover:bg-slate-50"
+            className="rounded border border-slate-600 px-4 py-2 font-medium text-slate-300 hover:bg-slate-700"
           >
             Cancelar
           </button>
