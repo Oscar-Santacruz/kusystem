@@ -13,15 +13,27 @@
 ## Integración API
 - Cliente HTTP central: `src/services/api.ts` con `ApiInstance`.
 - Hooks por dominio (p.ej. `useQuotes`, `useClients`, `useProducts`, `useClientBranches`).
-- Convenciones: `placeholderData: keepPreviousData`, `refetchOnWindowFocus: false`, normalizar fechas y limpiar strings vacíos antes de enviar.
 
-## Flujo de Presupuestos
-- `QuoteForm` integra búsqueda y creación inline de clientes y productos.
-- Debounce de búsqueda y loaders.
-- Validación mínima: cliente seleccionado + al menos un ítem.
-- Impresión: `/quotes/:id/print` con layout dedicado.
+## Persistencia del `pageSize`
+- Persistir en `localStorage` con key `"table:pageSize"`.
+- Defaults responsive: Mobile (≤768) = 10; Desktop = 25.
+- Si la preferencia no existe en el viewport actual, ajustar al valor permitido más cercano y resetear a página 1.
 
-## Desac acoplamiento y futura exportación
-- Cada módulo tiene dependencias mínimas al host.
-- `shared` como capa estable para mover módulos a repos externos.
-- Evitar imports cruzados entre módulos (usar tipos/funciones de `shared`).
+## Patrón mínimo en páginas de lista
+1. Definir `columns: ColumnDef<T>[]` en la página.
+2. Llevar `pageIndex` (0-based) y `pageSize` en estado local con persistencia.
+3. Llamar al hook de datos con `page = pageIndex + 1` y `pageSize`.
+4. Pasar a `DataTable`:
+   - `data`, `columns`, `isLoading`, `pagination={{ pageIndex, pageSize, total }}`.
+   - `onPaginationChange={(next) => { setPageIndex(next.pageIndex); setPageSize(next.pageSize) }}`.
+
+## Do / Don’t (Tablas)
+- Do: usar `DataTable` para todas las nuevas tablas paginadas.
+- Do: mantener búsqueda y acciones fuera del `DataTable` (en la página).
+- Don’t: duplicar paginación arriba de la tabla ni crear tablas HTML manuales.
+- Don’t: añadir librerías nuevas para tabla/paginación.
+
+## Referencias
+- Componente genérico: `src/shared/components/DataTable.tsx`.
+- Implementaciones: `modules/clients/pages/ClientsListPage.tsx`, `modules/products/pages/ProductsListPage.tsx`.
+- Pendiente de unificar: `modules/quotes/components/QuotesTable.tsx` (puede migrarse a `DataTable`).
