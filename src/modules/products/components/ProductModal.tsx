@@ -69,6 +69,7 @@ export function ProductModal({ mode, open, onClose, productId, onSuccess }: Prod
         stock: product.stock || 0,
         minStock: product.minStock || 0,
         barcode: product.barcode,
+        imageUrl: product.imageUrl || '',
         priceIncludesTax: product.priceIncludesTax ?? false,
       }
     }
@@ -84,6 +85,7 @@ export function ProductModal({ mode, open, onClose, productId, onSuccess }: Prod
       stock: 0,
       minStock: 0,
       barcode: '',
+      imageUrl: '',
       priceIncludesTax: false,
     }
   }, [isEdit, product])
@@ -123,7 +125,10 @@ export function ProductModal({ mode, open, onClose, productId, onSuccess }: Prod
       if (updated) {
         onSuccess?.('edit', updated as unknown as Product)
       }
-      guardedClose()
+      // Resetear snapshot para evitar el guard al cerrar después de guardar
+      setInitialSnapshot(null)
+      setCurrentValues(null)
+      onClose()
     } else {
       const input: CreateProductInput = submitIncludesTax
         ? { ...vals, price: vals.price / (1 + (vals.taxRate || 0)), priceIncludesTax: true }
@@ -132,7 +137,10 @@ export function ProductModal({ mode, open, onClose, productId, onSuccess }: Prod
       if (created) {
         onSuccess?.('create', created as unknown as Product)
       }
-      guardedClose()
+      // Resetear snapshot para evitar el guard al cerrar después de guardar
+      setInitialSnapshot(null)
+      setCurrentValues(null)
+      onClose()
     }
   }
 

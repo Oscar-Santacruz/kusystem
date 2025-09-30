@@ -32,6 +32,7 @@ export function ProductEditPage(): JSX.Element {
           stock: (data as any).stock ?? 0,
           minStock: (data as any).minStock ?? 0,
           barcode: (data as any).barcode ?? '',
+          imageUrl: (data as any).imageUrl ?? '',
         }}
         pending={update.isPending}
         onSubmit={(vals) => {

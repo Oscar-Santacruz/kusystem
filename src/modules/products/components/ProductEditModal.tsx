@@ -33,6 +33,7 @@ export function ProductEditModal({ open, onClose, product, onSuccess }: ProductE
     stock: product.stock || 0,
     minStock: product.minStock || 0,
     barcode: product.barcode,
+    imageUrl: product.imageUrl || '',
     priceIncludesTax: product.priceIncludesTax,
   }
 

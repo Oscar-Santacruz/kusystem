@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { createOrganization } from '@/services/org'
 import { useOrgStore } from '@/lib/org-store'
 import { MobileActionBar } from '@/shared/ui/mobile-action-bar'
-import { uploadOrgLogo } from '@/services/files'
+import { ImageUploader } from '@/shared/ui/image-uploader'
+import { getEnv } from '@/config/env'
 
 function slugify(input: string) {
   return input
@@ -20,11 +21,24 @@ export function CreateOrganizationPage() {
   const setOrgId = useOrgStore((s) => s.setOrgId)
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
-  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoKey, setLogoKey] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const logoPreview = useMemo(() => (logoFile ? URL.createObjectURL(logoFile) : null), [logoFile])
+  const uploadUrl = useMemo(() => {
+    const { VITE_FILES_BASE_URL } = getEnv()
+    const base = VITE_FILES_BASE_URL || 'http://localhost:3000'
+    const key = `kusystem/${encodeURIComponent(slug || 'temp')}/logo.png`
+    return `${base}/api/files/${key}`
+  }, [slug])
+
+  // URL completa para vista previa
+  const previewUrl = useMemo(() => {
+    if (!logoKey) return null
+    const { VITE_FILES_BASE_URL } = getEnv()
+    const base = VITE_FILES_BASE_URL || 'http://localhost:3000'
+    return `${base}/api/files/${logoKey}`
+  }, [logoKey])
 
   function onNameChange(v: string) {
     setName(v)
@@ -38,13 +52,8 @@ export function CreateOrganizationPage() {
     try {
       const nameTrim = name.trim()
       const slugTrim = slug.trim()
-      let logoKey: string | undefined
-      if (logoFile) {
-        // 1) Subir imagen al servicio interno y obtener la key
-        logoKey = await uploadOrgLogo(slugTrim, logoFile)
-      }
-      // 2) Crear organización pasando la key (si existe)
-      const org = await createOrganization({ name: nameTrim, slug: slugTrim, logoUrl: logoKey })
+      // Crear organización pasando la key del logo (si se subió)
+      const org = await createOrganization({ name: nameTrim, slug: slugTrim, logoUrl: logoKey || undefined })
       // org.id puede venir como string
       const id = (org as any).id?.toString?.() ?? String((org as any).id)
       setOrgId(id)
@@ -62,27 +71,21 @@ export function CreateOrganizationPage() {
       <form id="create-org-form" onSubmit={onSubmit} className="grid gap-4">
         <div className="grid gap-2">
           <span className="text-sm text-gray-700">Logo de la empresa (opcional)</span>
-          <div className="flex items-center gap-4">
-            <div className="h-16 w-16 flex items-center justify-center rounded border bg-white overflow-hidden">
-              {logoPreview ? (
-                <img src={logoPreview} alt="Vista previa del logo" className="h-full w-full object-contain" />
-              ) : (
-                <span className="text-xs text-gray-400">Sin logo</span>
-              )}
-            </div>
-            <label className="inline-flex items-center gap-2">
-              <input
-                type="file"
-                accept="image/*"
-                className="block text-sm"
-                onChange={(e) => {
-                  const f = e.target.files?.[0] || null
-                  setLogoFile(f)
-                }}
-              />
-            </label>
-          </div>
-          <p className="text-xs text-gray-500">Formatos recomendados: PNG o SVG. Tamaño sugerido: 256x256.</p>
+          <ImageUploader
+            uploadUrl={uploadUrl}
+            onUploadSuccess={(fileKey) => {
+              setLogoKey(fileKey)
+            }}
+            onUploadError={(error) => {
+              console.error('Error al subir logo:', error)
+              setError('Error al subir el logo. Por favor intenta de nuevo.')
+            }}
+            previewUrl={previewUrl}
+            onClearPreview={() => setLogoKey(null)}
+            helpText="Formatos recomendados: PNG o SVG. Tamaño sugerido: 256x256. Máximo: 5MB."
+            disabled={loading}
+            height={150}
+          />
         </div>
         <label className="grid gap-2">
           <span className="text-sm text-gray-700">Nombre de la empresa</span>

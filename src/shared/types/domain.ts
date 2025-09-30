@@ -46,6 +46,7 @@ export interface Product {
   stock: number
   minStock: number
   barcode?: string
+  imageUrl?: string
   priceIncludesTax?: boolean
   createdAt?: string
   updatedAt?: string
@@ -62,6 +63,7 @@ export interface CreateProductInput {
   stock: number
   minStock: number
   barcode?: string
+  imageUrl?: string
   priceIncludesTax?: boolean
 }
 

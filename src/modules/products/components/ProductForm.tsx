@@ -1,8 +1,10 @@
-import { useEffect, useState, useId, type JSX } from 'react'
+import { useEffect, useState, useId, useMemo, type JSX } from 'react'
 import { z } from 'zod'
 import type { CreateProductInput } from '@/shared/types/domain'
 import { formatCurrency } from '@/shared/utils/format'
 import { MobileActionBar } from '@/shared/ui/mobile-action-bar'
+import { ImageUploader } from '@/shared/ui/image-uploader'
+import { getProductImageUploadUrl } from '@/services/files'
 
 export interface ProductFormValues extends CreateProductInput {}
 
@@ -30,7 +32,8 @@ const DEFAULTS: ProductFormValues = {
   taxRate: 0.1,
   stock: 0,
   minStock: 0,
-  barcode: ''
+  barcode: '',
+  imageUrl: ''
 }
 
 export function ProductForm(props: ProductFormProps): JSX.Element {
@@ -38,6 +41,20 @@ export function ProductForm(props: ProductFormProps): JSX.Element {
   const [values, setValues] = useState<ProductFormValues>(initialValues ?? DEFAULTS)
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormValues, string>>>({})
   const uid = useId()
+  
+  // Generar un ID temporal para el upload de imagen (antes de crear el producto)
+  const tempProductId = useMemo(() => `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`, [])
+  const uploadUrl = useMemo(() => getProductImageUploadUrl(tempProductId), [tempProductId])
+  
+  // URL completa para vista previa de la imagen
+  const imagePreviewUrl = useMemo(() => {
+    if (!values.imageUrl) return null
+    // Si ya es una URL completa, usarla directamente
+    if (values.imageUrl.startsWith('http')) return values.imageUrl
+    // Si es un path, construir la URL completa
+    const base = import.meta.env.VITE_FILES_BASE_URL || 'http://localhost:3000'
+    return `${base}/api/files/${values.imageUrl}`
+  }, [values.imageUrl])
 
   const ProductSchema = z.object({
     name: z.string().trim().min(2, 'El nombre es requerido'),
@@ -54,7 +71,8 @@ export function ProductForm(props: ProductFormProps): JSX.Element {
     taxRate: z.number().min(0, 'Debe ser >= 0').max(1, 'Debe ser <= 1'),
     stock: z.number().min(0, 'Stock inválido'),
     minStock: z.number().min(0, 'Stock mínimo inválido'),
-    barcode: z.string().optional()
+    barcode: z.string().optional(),
+    imageUrl: z.string().optional()
   })
 
   useEffect(() => {
@@ -347,6 +365,28 @@ export function ProductForm(props: ProductFormProps): JSX.Element {
             </div>
           </div>
         </div>
+
+        {/* Image Section */}
+        <div className="space-y-4 border rounded-lg p-4">
+          <div className="flex items-center gap-2">
+            <span className="text-blue-600">🖼️</span>
+            <h3 className="font-medium text-slate-700">Imagen del Producto (opcional)</h3>
+          </div>
+          <ImageUploader
+            uploadUrl={uploadUrl}
+            onUploadSuccess={(fileKey) => {
+              handleChange('imageUrl', fileKey)
+            }}
+            onUploadError={(error) => {
+              console.error('Error al subir imagen:', error)
+            }}
+            previewUrl={imagePreviewUrl}
+            onClearPreview={() => handleChange('imageUrl', undefined as any)}
+            helpText="Formatos recomendados: JPG, PNG o WebP. Tamaño máximo: 5MB."
+            disabled={pending}
+            height={180}
+          />
+        </div>
       </div>
 
       {/* Price Summary */}
@@ -401,6 +441,7 @@ export function ProductForm(props: ProductFormProps): JSX.Element {
           </div>
         </div>
       </div>
+
       {/* Mobile sticky actions if not controlled by external modal footer */}
       {!formId && (
         <MobileActionBar>
