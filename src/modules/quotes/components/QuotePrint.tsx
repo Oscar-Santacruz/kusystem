@@ -160,8 +160,12 @@ export const QuotePrint = forwardRef<HTMLDivElement, QuotePrintProps>(function Q
           </div>
         </div>
         <div className="flex flex-col items-center">
-          <div className="text-lg font-semibold text-black">Estación de Servicios</div>
-          <div className="text-lg font-semibold text-black">{data.branchName || '—'}</div>
+          {data.branchName ? (
+            <>
+              <div className="text-lg font-semibold text-black">Estación de Servicios</div>
+              <div className="text-lg font-semibold text-black">{data.branchName}</div>
+            </>
+          ) : null}
         </div>
       </div>
 

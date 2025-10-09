@@ -8,6 +8,7 @@ export interface GeneralSectionProps {
   dueInDays: number
   dueDate: string
   onChangeDueInDays: (v: number) => void
+  onChangeIssueDate: (v: string) => void
   // Branch selection (depends on customer)
   customerId?: string
   branchId?: string
@@ -24,6 +25,7 @@ export function GeneralSection(props: GeneralSectionProps): JSX.Element {
     dueInDays,
     dueDate,
     onChangeDueInDays,
+    onChangeIssueDate,
     customerId,
     showBranchSelector,
     setShowBranchSelector,
@@ -33,10 +35,15 @@ export function GeneralSection(props: GeneralSectionProps): JSX.Element {
 
   return (
     <div className="grid gap-4 sm:grid-cols-3">
-      {/* Emisión (no editable) */}
+      {/* Emisión (editable) */}
       <label className="flex flex-col gap-1">
         <span className="text-sm text-slate-300">Emisión</span>
-        <div className="w-40 rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white">{issueDate || '-'}</div>
+        <input
+          type="date"
+          className="w-40 rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white outline-none focus:ring"
+          value={issueDate || ''}
+          onChange={(e) => onChangeIssueDate(e.target.value)}
+        />
       </label>
 
       {/* Vencimiento en días */}

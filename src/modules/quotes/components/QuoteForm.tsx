@@ -280,6 +280,19 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
     })
   }
 
+  // Reordenar items (HTML5 DnD)
+  function reorderItems(fromIndex: number, toIndex: number) {
+    if (fromIndex === toIndex) return
+    setValues((prev) => {
+      const list = [...(prev.items ?? [])]
+      if (fromIndex < 0 || fromIndex >= list.length) return prev
+      if (toIndex < 0 || toIndex >= list.length) return prev
+      const [moved] = list.splice(fromIndex, 1)
+      list.splice(toIndex, 0, moved)
+      return { ...prev, items: list }
+    })
+  }
+
   const totals = useMemo(() => {
     return computeTotals(values.items ?? [], values.additionalCharges ?? [])
   }, [values.items, values.additionalCharges])
@@ -351,6 +364,7 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
             dueInDays={dueInDays}
             dueDate={values.dueDate || ''}
             onChangeDueInDays={(n) => setDueInDays(n)}
+            onChangeIssueDate={(d) => handleChange('issueDate', d)}
             customerId={values.customerId}
             branchId={values.branchId}
             branchName={values.branchName}
@@ -379,6 +393,7 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
           onAddFromProduct={(p) => addItemFromProduct(p)}
           onUpdateItem={(i, patch) => updateItem(i, patch)}
           onRemoveItem={(i) => removeItem(i)}
+          onReorderItems={(from, to) => reorderItems(from, to)}
           items={values.items ?? []}
           formatPrice={formatPrice}
         />

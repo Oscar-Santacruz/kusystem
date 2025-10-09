@@ -32,7 +32,8 @@ export function QuotePrintPage(): JSX.Element {
   async function handleDownloadPdf(): Promise<void> {
     const el = document.getElementById('print-sheet')
     if (!el) return
-    const html2pdf = (await import('html2pdf.js')).default as any
+    // Usar el bundle que incluye html2canvas y jsPDF para evitar fallas de import dinámico en Vite
+    const html2pdf = (await import('html2pdf.js/dist/html2pdf.bundle.min.js')).default as any
     const filename = `presupuesto-${onlyDigits(data?.number ?? id ?? '') || (id ?? 'sin-numero')}.pdf`
     await html2pdf()
       .set({

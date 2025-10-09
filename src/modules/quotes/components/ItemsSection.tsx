@@ -16,6 +16,8 @@ export interface ItemsSectionProps {
   onAddFromProduct: (p: { id: string; name: string; price: number; taxRate?: number | undefined }) => void
   onUpdateItem: (index: number, patch: Partial<QuoteItem>) => void
   onRemoveItem: (index: number) => void
+  // Reorder (DnD)
+  onReorderItems: (fromIndex: number, toIndex: number) => void
   // Data
   items: QuoteItem[]
   // Utils
@@ -32,6 +34,7 @@ export function ItemsSection(props: ItemsSectionProps): JSX.Element {
     onAddFromProduct,
     onUpdateItem,
     onRemoveItem,
+    onReorderItems,
     items,
     formatPrice,
   } = props
@@ -101,6 +104,7 @@ export function ItemsSection(props: ItemsSectionProps): JSX.Element {
         <table className="min-w-[700px] w-full border-collapse text-sm">
           <thead>
             <tr>
+              <th className="border border-slate-800 px-2 py-2 text-center w-8" title="Arrastra para reordenar" aria-label="Handle" />
               <th className="border border-slate-800 px-3 py-2 text-left w-2/5">Descripción</th>
               <th className="border border-slate-800 px-3 py-2 text-right w-20">Cantidad</th>
               <th className="border border-slate-800 px-3 py-2 text-right w-28">P. Unit</th>
@@ -110,7 +114,45 @@ export function ItemsSection(props: ItemsSectionProps): JSX.Element {
           </thead>
           <tbody>
             {items.map((it, idx) => (
-              <tr key={idx}>
+              <tr
+                key={idx}
+                draggable
+                onDragStart={(e) => {
+                  try { e.dataTransfer.setData('text/plain', String(idx)) } catch {}
+                  // efecto visual
+                  e.currentTarget.classList.add('opacity-60')
+                }}
+                onDragEnd={(e) => {
+                  e.currentTarget.classList.remove('opacity-60')
+                }}
+                onDragOver={(e) => {
+                  // Necesario para permitir drop
+                  e.preventDefault()
+                }}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  const from = Number(e.dataTransfer.getData('text/plain'))
+                  const to = idx
+                  if (!Number.isNaN(from) && from !== to) {
+                    onReorderItems(from, to)
+                  }
+                }}
+                className="cursor-move"
+                title="Arrastra para reordenar"
+              >
+                <td className="border border-slate-800 px-2 py-2 text-center align-middle select-none">
+                  <span className="inline-flex items-center justify-center text-slate-400/80" aria-hidden="true">
+                    {/* 6-dot handle */}
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" className="opacity-75">
+                      <circle cx="5" cy="5" r="1" />
+                      <circle cx="11" cy="5" r="1" />
+                      <circle cx="5" cy="8" r="1" />
+                      <circle cx="11" cy="8" r="1" />
+                      <circle cx="5" cy="11" r="1" />
+                      <circle cx="11" cy="11" r="1" />
+                    </svg>
+                  </span>
+                </td>
                 <td className="border border-slate-800 px-3 py-2">
                   <div className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white" title={it.description}>
                     {it.description}
