@@ -27,7 +27,7 @@ export interface ImageUploaderProps {
   onClearPreview?: () => void
 }
 
-type AnyUppyFile = UppyFile<Record<string, unknown>, Record<string, unknown>>
+type AnyUppyFile = UppyFile<Record<string, unknown>, Record<string, unknown>> & { id: string }
 
 export function ImageUploader(props: ImageUploaderProps) {
   const {
@@ -64,7 +64,10 @@ export function ImageUploader(props: ImageUploaderProps) {
     uppy.cancelAll()
     const files = uppy.getFiles() as AnyUppyFile[]
     files.forEach((file) => {
-      uppy.removeFile(file.id)
+      const { id } = file
+      if (typeof id === 'string' && id.length > 0) {
+        uppy.removeFile(id)
+      }
     })
   }
 
