@@ -32,5 +32,22 @@ export default defineConfig(({ mode }) => {
         clientPort: PORT,
       },
     },
+    build: {
+      sourcemap: false,
+      // Aumentar el umbral del warning sin desactivar optimizaciones
+      chunkSizeWarningLimit: 1200,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // Separar librerías base
+            react: ['react', 'react-dom'],
+            router: ['react-router-dom'],
+            // Librerías pesadas usadas para impresión/descarga
+            pdf: ['html2pdf.js', 'html2pdf.js/dist/html2pdf.bundle.min.js'],
+            qr: ['react-qr-code'],
+          },
+        },
+      },
+    },
   }
 })

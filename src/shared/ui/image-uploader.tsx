@@ -1,5 +1,6 @@
 import { useEffect, useState, useId } from 'react'
 import Uppy from '@uppy/core'
+import type { UppyFile } from '@uppy/core'
 import { Dashboard } from '@uppy/react'
 import XHRUpload from '@uppy/xhr-upload'
 import { FiX } from 'react-icons/fi'
@@ -25,6 +26,8 @@ export interface ImageUploaderProps {
   /** Limpia la imagen seleccionada para volver a elegir otra */
   onClearPreview?: () => void
 }
+
+type AnyUppyFile = UppyFile<Record<string, unknown>, Record<string, unknown>>
 
 export function ImageUploader(props: ImageUploaderProps) {
   const {
@@ -59,7 +62,7 @@ export function ImageUploader(props: ImageUploaderProps) {
   // Función para limpiar archivos de Uppy
   const clearUppyFiles = () => {
     uppy.cancelAll()
-    const files = uppy.getFiles()
+    const files = uppy.getFiles() as AnyUppyFile[]
     files.forEach((file) => {
       uppy.removeFile(file.id)
     })

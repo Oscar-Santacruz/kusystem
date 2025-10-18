@@ -4,21 +4,29 @@ FROM node:20 AS builder
 
 WORKDIR /app
 
-# Enable pnpm
-RUN corepack enable
+# Enable pnpm with fixed version (stable cache)
+RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 
 # Copy dependency definition files
 COPY package.json pnpm-lock.yaml* ./
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install dependencies (use BuildKit cache for pnpm store)
+RUN --mount=type=cache,target=/root/.pnpm-store \
+    pnpm install --frozen-lockfile
 
 # Copy the rest of the source code
 COPY . .
 
-# Build the project
-# The output will be in the /app/dist directory
-RUN pnpm build
+# Build the project (use Vite only; run typecheck in CI/local)
+# Increase Node heap to avoid OOM; disable sourcemaps to reduce I/O
+ENV NODE_ENV=production
+ENV VITE_BUILD_SOURCEMAP=false
+ENV NODE_OPTIONS=--max-old-space-size=4096
+
+# Cache Vite artifacts between builds (requires BuildKit)
+RUN --mount=type=cache,target=/root/.pnpm-store \
+    --mount=type=cache,target=/root/.cache/vite \
+    pnpm vite build
 
 # ---- Production Stage ----
 # Use a lightweight Nginx image to serve the static files
