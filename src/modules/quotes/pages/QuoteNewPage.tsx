@@ -12,21 +12,15 @@ export function QuoteNewPage(): JSX.Element {
 
   // Logs de diagnóstico de montaje y cambios relevantes
   useEffect(() => {
-    // Montaje de la página
-    console.log('[QuoteNewPage] mount')
-    return () => console.log('[QuoteNewPage] unmount')
+    // Montaje de la página (sin logs)
+    return () => {}
   }, [])
 
-  useEffect(() => {
-    console.log('[QuoteNewPage] orgLogoUrl changed:', orgLogoUrl)
-  }, [orgLogoUrl])
+  useEffect(() => {}, [orgLogoUrl])
 
-  useEffect(() => {
-    console.log('[QuoteNewPage] create.isPending:', create.isPending)
-  }, [create.isPending])
+  useEffect(() => {}, [create.isPending])
 
   const imgSrc = orgLogoUrl || (logo as any)
-  console.log('[QuoteNewPage] img src resolved:', { imgSrc, hasOrgLogoUrl: Boolean(orgLogoUrl) })
 
   return (
     <section className="space-y-4">

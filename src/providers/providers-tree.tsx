@@ -18,12 +18,10 @@ const queryClient = new QueryClient()
 function AuthBridge({ children }: { children: ReactNode }) {
   const { getAccessTokenSilently, isAuthenticated, user } = useAuth0()
   useEffect(() => {
-    console.log('[auth] AuthBridge mount. isAuthenticated:', isAuthenticated)
     ApiClient.setAuthTokenProvider(async () => {
       if (!isAuthenticated) return null
       try {
         const token = await getAccessTokenSilently()
-        console.log('[auth] token obtenido (len):', token?.length ?? 0)
         return token
       } catch {
         console.warn('[auth] fallo al obtener token')
@@ -84,14 +82,6 @@ export function Providers({ children }: ProvidersProps) {
     : `${baseRedirect.replace(/\/$/, '')}/callback`
 
   // Logs de diagnóstico para Auth0Provider (no se imprimen secretos)
-  console.log('[auth0] config:', {
-    domain,
-    clientId,
-    audience,
-    redirectUri,
-    authDisabled,
-    insecureOrigin,
-  })
   if (authDisabled || insecureOrigin || !domain || !clientId) {
     // Bypass completo de Auth0: no montamos el provider y limpiamos el token provider
     useEffect(() => {
@@ -122,7 +112,6 @@ export function Providers({ children }: ProvidersProps) {
         }}
         onRedirectCallback={(appState) => {
           const target = (appState as any)?.returnTo || '/main/welcome'
-          console.log('[auth0] onRedirectCallback →', target)
           window.location.replace(target)
         }}
         cacheLocation="localstorage"

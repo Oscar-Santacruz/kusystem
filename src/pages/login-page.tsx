@@ -11,7 +11,6 @@ export function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      console.log('[login] usuario autenticado, redirigiendo a', safeFrom)
       navigate(safeFrom, { replace: true })
     }
   }, [isAuthenticated, safeFrom, navigate])
@@ -25,7 +24,6 @@ export function LoginPage() {
       <button
         className="rounded bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500"
         onClick={() => {
-          console.log('[login] loginWithRedirect → returnTo:', safeFrom)
           loginWithRedirect({ appState: { returnTo: safeFrom } })
         }}
       >

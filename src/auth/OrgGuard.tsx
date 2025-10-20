@@ -46,7 +46,6 @@ export function OrgGuard({ children }: OrgGuardProps) {
           name: m.tenant.name ?? null,
           logoUrl: (m.tenant.logoUrl as string | null) ?? null,
         }))
-        console.log('[OrgGuard] setting organizations in store:', metas.length, 'orgs')
         setOrganizations(metas)
 
         if (list.length === 0) {
@@ -63,7 +62,6 @@ export function OrgGuard({ children }: OrgGuardProps) {
         // Publicar currentOrg al store según orgId efectivo
         const currentId = orgId || list[0].tenant.id.toString()
         const cur = metas.find((m) => m.id === currentId) || null
-        console.log('[OrgGuard] setting currentOrg in store:', { currentId, cur })
         setCurrentOrg(cur)
         // Si estamos en onboarding pero ya existen organizaciones, enviar a inicio
         if (location.pathname.startsWith('/onboarding')) {

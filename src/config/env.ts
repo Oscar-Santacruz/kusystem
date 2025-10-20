@@ -34,17 +34,5 @@ export function getEnv(): AppEnv {
       '[env] Configuración inválida. Revisa tu .env: VITE_AUTH0_DOMAIN y VITE_AUTH0_CLIENT_ID son obligatorias, y VITE_AUTH0_CALLBACK_URL debe ser URL si se define.'
     )
   }
-  const env = parsed.data
-  // Logs de diagnóstico (no exponen secretos)
-  console.log('[env] cargado:', {
-    VITE_AUTH0_DOMAIN: env.VITE_AUTH0_DOMAIN,
-    VITE_AUTH0_CLIENT_ID: env.VITE_AUTH0_CLIENT_ID,
-    VITE_AUTH0_AUDIENCE: env.VITE_AUTH0_AUDIENCE,
-    VITE_AUTH0_CALLBACK_URL: env.VITE_AUTH0_CALLBACK_URL,
-    VITE_API_BASE_URL: env.VITE_API_BASE_URL,
-    VITE_AUTH_DISABLED: env.VITE_AUTH_DISABLED,
-    VITE_PUBLIC_APP_URL: env.VITE_PUBLIC_APP_URL,
-    VITE_FILES_BASE_URL: env.VITE_FILES_BASE_URL,
-  })
-  return env
+  return parsed.data
 }

@@ -3,15 +3,19 @@ import { quotesModule } from '@/modules/quotes'
 import { clientsModule } from '@/modules/clients'
 import { productsModule } from '@/modules/products'
 import { clientBranchesModule } from '@/modules/client-branches'
+import { hrModule } from '@/modules/hr/module'
 
-export const modules: ModuleDescriptor[] = [quotesModule, clientsModule, productsModule, clientBranchesModule]
+export const modules: ModuleDescriptor[] = [
+  quotesModule,
+  clientsModule,
+  productsModule,
+  clientBranchesModule,
+  hrModule,
+]
 
 export function getMainChildrenRoutes(): ModuleRoute[] {
   try {
-    const ids = modules.map((m) => m.id)
-    console.log('[registry] modules loaded:', ids)
     const allRoutes = modules.flatMap((m) => m.routes)
-    console.log('[registry] routes injected:', allRoutes.map((r) => r.path))
     return allRoutes
   } catch (e) {
     console.error('[registry] error building routes:', e)

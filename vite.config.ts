@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const PORT = Number(env.VITE_PORT ?? 5175)
-  const HMR_HOST = env.VITE_HMR_HOST || 'localhost'
+  const rawHost = env.VITE_HMR_HOST || 'localhost'
+  const HMR_HOST = rawHost.replace(/^https?:\/\//, '')
 
   return {
     plugins: [react()],

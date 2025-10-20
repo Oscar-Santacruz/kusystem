@@ -30,7 +30,6 @@ export function OrgSelector() {
     retryDelay: (attempt) => 500 * attempt,
     refetchOnWindowFocus: false,
   })
-  try { console.log('[OrgSelector] enabled:', ready, 'authLoading:', authLoading, 'isAuthenticated:', isAuthenticated) } catch {}
 
   const list = data?.data || []
   const options = list.map((m) => ({ id: m.tenant.id.toString(), name: m.tenant.name, role: m.role }))
