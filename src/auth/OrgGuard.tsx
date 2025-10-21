@@ -4,6 +4,7 @@ import { useAuth0 } from '@auth0/auth0-react'
 import { useOrgStore } from '@/lib/org-store'
 import { getMyOrganizations, getMyPermissions } from '@/services/org'
 import { usePermissionsStore, type Permission } from '@/lib/permissions-store'
+import { useAuthReadyStore } from '@/lib/auth-ready-store'
 
 interface OrgGuardProps {
   children: ReactNode
@@ -19,9 +20,9 @@ export function OrgGuard({ children }: OrgGuardProps) {
   const setPermissions = usePermissionsStore((s) => s.setPermissions)
   const setIsOwner = usePermissionsStore((s) => s.setIsOwner)
   const resetPermissions = usePermissionsStore((s) => s.reset)
-  const { isAuthenticated, isLoading, user } = useAuth0()
+  const { isAuthenticated, isLoading } = useAuth0()
+  const authReady = useAuthReadyStore((s) => s.isReady)
   const resolvingRef = useRef(false)
-  const retriedRef = useRef(false)
   const loadingPermsRef = useRef(false)
 
   useEffect(() => {
@@ -31,21 +32,8 @@ export function OrgGuard({ children }: OrgGuardProps) {
       resolvingRef.current = true
       
       try {
-        let list: Array<any> = []
-        try {
-          const res = await getMyOrganizations()
-          list = res.data || []
-        } catch (e) {
-          // Primer intento falló (red/401). Hacemos un reintento breve una sola vez.
-          if (!retriedRef.current) {
-            retriedRef.current = true
-            await new Promise((r) => setTimeout(r, 800))
-            const res2 = await getMyOrganizations()
-            list = res2.data || []
-          } else {
-            throw e
-          }
-        }
+        const res = await getMyOrganizations()
+        const list = res.data || []
         // Mapear y publicar lista en el store como metadatos
         const metas = list.map((m) => ({
           id: m.tenant.id.toString(),
@@ -106,16 +94,42 @@ export function OrgGuard({ children }: OrgGuardProps) {
       }
     }
 
-    // No intentar resolver mientras Auth0 sigue cargando o user no está disponible
-    if (isLoading || !user?.sub) return
+    // No intentar resolver mientras Auth0 sigue cargando o headers no están configurados
+    if (isLoading || !authReady) {
+      console.log('[OrgGuard] Esperando auth...', { isLoading, authReady })
+      return
+    }
 
-    if (!orgId && isAuthenticated && user) {
+    if (!orgId && isAuthenticated) {
       void resolveOrg()
-    } else if (orgId && isAuthenticated && user) {
+    } else if (orgId && isAuthenticated) {
       void loadPermissions()
     }
-  }, [orgId, isAuthenticated, isLoading, user, navigate, location, setOrgId, setOrganizations, setCurrentOrg, setPermissions, setIsOwner, resetPermissions])
+  }, [orgId, isAuthenticated, isLoading, authReady, navigate, location, setOrgId, setOrganizations, setCurrentOrg, setPermissions, setIsOwner, resetPermissions])
 
-  if (!orgId) return <div className="p-4 text-slate-300">Resolviendo organización…</div>
+  // Mostrar skeleton mientras esperamos auth headers
+  if (!authReady || isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-900">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent mb-4"></div>
+          <p className="text-slate-300">Preparando autenticación...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Mostrar skeleton mientras resolvemos organización
+  if (!orgId) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-900">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent mb-4"></div>
+          <p className="text-slate-300">Cargando organización...</p>
+        </div>
+      </div>
+    )
+  }
+  
   return <>{children}</>
 }

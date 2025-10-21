@@ -19,40 +19,52 @@ function AuthBridge({ children }: { children: ReactNode }) {
   const { getAccessTokenSilently, isAuthenticated, user } = useAuth0()
   useEffect(() => {
     console.log('[AuthBridge] isAuthenticated:', isAuthenticated, 'user:', user)
-    ApiClient.setAuthTokenProvider(async () => {
-      if (!isAuthenticated) return null
-      try {
-        const token = await getAccessTokenSilently()
-        return token
-      } catch {
-        console.warn('[auth] fallo al obtener token')
-        return null
+    
+    // Importar el store de manera dinámica para evitar circular dependency
+    import('@/lib/auth-ready-store').then(({ useAuthReadyStore }) => {
+      const setReady = useAuthReadyStore.getState().setReady
+      
+      ApiClient.setAuthTokenProvider(async () => {
+        if (!isAuthenticated) return null
+        try {
+          const token = await getAccessTokenSilently()
+          return token
+        } catch {
+          console.warn('[auth] fallo al obtener token')
+          return null
+        }
+      })
+      
+      // Encabezados puente para backend dev (getCurrentUser usa x-user-*)
+      // En producción, esto debería ser reemplazado por validación JWT server-side
+      if (isAuthenticated && user) {
+        console.log('[AuthBridge] Seteando headers:', { sub: user.sub, email: user.email, name: user.name })
+        // Si cambia el usuario autenticado, reseteamos la org activa para evitar fugas entre cuentas
+        try {
+          const prevSub = localStorage.getItem('auth.user.sub')
+          if (user.sub && user.sub !== prevSub) {
+            localStorage.setItem('auth.user.sub', user.sub)
+            localStorage.removeItem('orgId')
+            // Actualiza el store inmediatamente
+            try { useOrgStore.getState().setOrgId(null) } catch { /* noop */ }
+          }
+        } catch { /* noop */ }
+
+        if (user.sub) ApiInstance.setHeader('x-user-sub', user.sub)
+        if (user.email) ApiInstance.setHeader('x-user-email', user.email)
+        const displayName = (user.name || user.nickname || user.email || '').toString()
+        if (displayName) ApiInstance.setHeader('x-user-name', displayName)
+        
+        // Marcar como listo DESPUÉS de setear headers
+        console.log('[AuthBridge] Headers configurados, marcando como ready')
+        setReady(true)
+      } else {
+        ApiInstance.removeHeader('x-user-sub')
+        ApiInstance.removeHeader('x-user-email')
+        ApiInstance.removeHeader('x-user-name')
+        setReady(false)
       }
     })
-    // Encabezados puente para backend dev (getCurrentUser usa x-user-*)
-    // En producción, esto debería ser reemplazado por validación JWT server-side
-    if (isAuthenticated && user) {
-      console.log('[AuthBridge] Seteando headers:', { sub: user.sub, email: user.email, name: user.name })
-      // Si cambia el usuario autenticado, reseteamos la org activa para evitar fugas entre cuentas
-      try {
-        const prevSub = localStorage.getItem('auth.user.sub')
-        if (user.sub && user.sub !== prevSub) {
-          localStorage.setItem('auth.user.sub', user.sub)
-          localStorage.removeItem('orgId')
-          // Actualiza el store inmediatamente
-          try { useOrgStore.getState().setOrgId(null) } catch { /* noop */ }
-        }
-      } catch { /* noop */ }
-
-      if (user.sub) ApiInstance.setHeader('x-user-sub', user.sub)
-      if (user.email) ApiInstance.setHeader('x-user-email', user.email)
-      const displayName = (user.name || user.nickname || user.email || '').toString()
-      if (displayName) ApiInstance.setHeader('x-user-name', displayName)
-    } else {
-      ApiInstance.removeHeader('x-user-sub')
-      ApiInstance.removeHeader('x-user-email')
-      ApiInstance.removeHeader('x-user-name')
-    }
   }, [getAccessTokenSilently, isAuthenticated, user])
   return <>{children}</>
 }
