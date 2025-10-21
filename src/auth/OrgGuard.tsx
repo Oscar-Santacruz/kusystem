@@ -19,15 +19,17 @@ export function OrgGuard({ children }: OrgGuardProps) {
   const setPermissions = usePermissionsStore((s) => s.setPermissions)
   const setIsOwner = usePermissionsStore((s) => s.setIsOwner)
   const resetPermissions = usePermissionsStore((s) => s.reset)
-  const { isAuthenticated, isLoading } = useAuth0()
+  const { isAuthenticated, isLoading, user } = useAuth0()
   const resolvingRef = useRef(false)
   const retriedRef = useRef(false)
+  const loadingPermsRef = useRef(false)
 
   useEffect(() => {
     // Resolver organizaciones y cargar permisos
     async function resolveOrg() {
       if (resolvingRef.current) return
       resolvingRef.current = true
+      
       try {
         let list: Array<any> = []
         try {
@@ -85,6 +87,9 @@ export function OrgGuard({ children }: OrgGuardProps) {
 
     // Cargar permisos cuando cambia el tenant activo
     async function loadPermissions() {
+      if (loadingPermsRef.current) return
+      loadingPermsRef.current = true
+      
       try {
         console.log('[OrgGuard] Cargando permisos para tenant:', orgId)
         const perms = await getMyPermissions()
@@ -96,18 +101,20 @@ export function OrgGuard({ children }: OrgGuardProps) {
       } catch (err) {
         console.error('[OrgGuard] Error cargando permisos:', err)
         resetPermissions()
+      } finally {
+        loadingPermsRef.current = false
       }
     }
 
-    // No intentar resolver mientras Auth0 sigue cargando
-    if (isLoading) return
+    // No intentar resolver mientras Auth0 sigue cargando o user no está disponible
+    if (isLoading || !user?.sub) return
 
-    if (!orgId && isAuthenticated) {
+    if (!orgId && isAuthenticated && user) {
       void resolveOrg()
-    } else if (orgId && isAuthenticated) {
+    } else if (orgId && isAuthenticated && user) {
       void loadPermissions()
     }
-  }, [orgId, isAuthenticated, isLoading, navigate, location, setOrgId, setPermissions, setIsOwner, resetPermissions])
+  }, [orgId, isAuthenticated, isLoading, user, navigate, location, setOrgId, setOrganizations, setCurrentOrg, setPermissions, setIsOwner, resetPermissions])
 
   if (!orgId) return <div className="p-4 text-slate-300">Resolviendo organización…</div>
   return <>{children}</>

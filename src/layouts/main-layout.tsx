@@ -10,6 +10,8 @@ export function MainLayout() {
   const canManagePermissions = usePermission('admin:manage-permissions')
   const canViewQuotes = usePermission('quotes:view')
   const canViewHrCalendar = usePermission('hr-calendar:view')
+  const canViewClients = usePermission('clients:view')
+  const canViewProducts = usePermission('products:view')
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
     try {
       const raw = localStorage.getItem('ui.sidebarOpen')
@@ -131,47 +133,53 @@ export function MainLayout() {
               
               {sidebarOpen && expandedSections.gestion && (
                 <div className="bg-slate-800/30">
-                  <NavLink
-                    to="/main/quotes"
-                    className={({ isActive }) => [
-                      'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
-                      isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
-                      sidebarOpen ? '' : 'md:pl-0 md:pr-0 md:justify-center md:gap-0',
-                    ].join(' ')}
-                  >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z" clipRule="evenodd"/>
-                    </svg>
-                    <span className={sidebarOpen ? '' : 'md:hidden'}>Presupuestos</span>
-                  </NavLink>
+                  {canViewQuotes && (
+                    <NavLink
+                      to="/main/quotes"
+                      className={({ isActive }) => [
+                        'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
+                        isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
+                        sidebarOpen ? '' : 'md:pl-0 md:pr-0 md:justify-center md:gap-0',
+                      ].join(' ')}
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z" clipRule="evenodd"/>
+                      </svg>
+                      <span className={sidebarOpen ? '' : 'md:hidden'}>Presupuestos</span>
+                    </NavLink>
+                  )}
                   
-                  <NavLink
-                    to="/main/clients"
-                    className={({ isActive }) => [
-                      'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
-                      isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
-                      sidebarOpen ? '' : 'md:pl-0 md:pr-0 md:justify-center md:gap-0',
-                    ].join(' ')}
-                  >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
-                    </svg>
-                    <span className={sidebarOpen ? '' : 'md:hidden'}>Clientes</span>
-                  </NavLink>
+                  {canViewClients && (
+                    <NavLink
+                      to="/main/clients"
+                      className={({ isActive }) => [
+                        'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
+                        isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
+                        sidebarOpen ? '' : 'md:pl-0 md:pr-0 md:justify-center md:gap-0',
+                      ].join(' ')}
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
+                      </svg>
+                      <span className={sidebarOpen ? '' : 'md:hidden'}>Clientes</span>
+                    </NavLink>
+                  )}
                   
-                  <NavLink
-                    to="/main/products"
-                    className={({ isActive }) => [
-                      'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
-                      isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
-                      sidebarOpen ? '' : 'md:pl-0 md:pr-0 md:justify-center md:gap-0',
-                    ].join(' ')}
-                  >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM9 9a1 1 0 112 0v4a1 1 0 11-2 0V9z" clipRule="evenodd"/>
-                    </svg>
-                    <span className={sidebarOpen ? '' : 'md:hidden'}>Productos</span>
-                  </NavLink>
+                  {canViewProducts && (
+                    <NavLink
+                      to="/main/products"
+                      className={({ isActive }) => [
+                        'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
+                        isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
+                        sidebarOpen ? '' : 'md:pl-0 md:pr-0 md:justify-center md:gap-0',
+                      ].join(' ')}
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM9 9a1 1 0 112 0v4a1 1 0 11-2 0V9z" clipRule="evenodd"/>
+                      </svg>
+                      <span className={sidebarOpen ? '' : 'md:hidden'}>Productos</span>
+                    </NavLink>
+                  )}
                 </div>
               )}
             </div>
