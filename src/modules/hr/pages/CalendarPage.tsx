@@ -39,6 +39,18 @@ export function CalendarPage(): JSX.Element {
     saveMessage: string
   } | null>(null)
 
+  // Estado para drag & drop
+  const [dragSource, setDragSource] = useState<{
+    employeeId: string
+    dayIndex: number
+    schedule: DaySchedule
+  } | null>(null)
+  
+  const [dropTarget, setDropTarget] = useState<{
+    employeeId: string
+    dayIndex: number
+  } | null>(null)
+
   // Detect if device supports touch
   const [isTouchDevice, setIsTouchDevice] = useState<boolean>(false)
 
@@ -235,6 +247,70 @@ export function CalendarPage(): JSX.Element {
     setModalData({ ...modalData, dayType, validationErrors: {} })
   }
 
+  // Handlers de drag & drop
+  const handleDragStart = (employeeId: string, dayIndex: number, schedule: DaySchedule) => {
+    setDragSource({ employeeId, dayIndex, schedule })
+  }
+
+  const handleDragEnd = () => {
+    setDragSource(null)
+    setDropTarget(null)
+  }
+
+  const handleDragOver = (employeeId: string, dayIndex: number) => {
+    // Solo permitir drop si es una celda diferente
+    if (dragSource && (dragSource.employeeId !== employeeId || dragSource.dayIndex !== dayIndex)) {
+      setDropTarget({ employeeId, dayIndex })
+    }
+  }
+
+  const handleDragLeave = () => {
+    setDropTarget(null)
+  }
+
+  const handleDrop = async (employeeId: string, dayIndex: number, date: Date) => {
+    if (!dragSource) return
+
+    // No copiar sobre la misma celda
+    if (dragSource.employeeId === employeeId && dragSource.dayIndex === dayIndex) {
+      setDragSource(null)
+      setDropTarget(null)
+      return
+    }
+
+    try {
+      const dateStr = format(date, 'yyyy-MM-dd')
+      
+      // Map frontend dayType to backend DayType enum
+      const dayTypeMap: Record<DayType, 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO'> = {
+        'laboral': 'LABORAL',
+        'ausente': 'AUSENTE',
+        'libre': 'LIBRE',
+        'no-laboral': 'NO_LABORAL',
+        'feriado': 'FERIADO',
+      }
+      
+      // Copiar los valores de la celda origen
+      await upsertSchedule(employeeId, dateStr, {
+        clockIn: dragSource.schedule.clockIn || null,
+        clockOut: dragSource.schedule.clockOut || null,
+        dayType: dayTypeMap[dragSource.schedule.dayType || 'laboral'],
+        overtimeMinutes: Math.round((dragSource.schedule.overtimeHours || 0) * 60),
+        advanceAmount: dragSource.schedule.advance || null,
+      })
+
+      // Recargar datos
+      const startDate = format(currentWeekStart, 'yyyy-MM-dd')
+      const data = await getWeekData(startDate)
+      setEmployees(data.employees)
+    } catch (error) {
+      console.error('Error copiando horario:', error)
+    } finally {
+      setDragSource(null)
+      setDropTarget(null)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-100 via-cyan-100 to-blue-200 p-4 sm:p-6">
       <div className="mx-auto w-full max-w-7xl">
@@ -342,6 +418,19 @@ export function CalendarPage(): JSX.Element {
                                 dayType: schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined,
                               }, dayMeta.date) }
                           )}
+                          onDragStart={() => handleDragStart(employee.id, idx, {
+                            clockIn: schedule?.clockIn || undefined,
+                            clockOut: schedule?.clockOut || undefined,
+                            advance: totalAdvance,
+                            overtimeHours,
+                            dayType: schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined,
+                          })}
+                          onDragEnd={handleDragEnd}
+                          onDragOver={() => handleDragOver(employee.id, idx)}
+                          onDragLeave={handleDragLeave}
+                          onDrop={() => handleDrop(employee.id, idx, dayMeta.date)}
+                          isDragging={dragSource?.employeeId === employee.id && dragSource?.dayIndex === idx}
+                          isDropTarget={dropTarget?.employeeId === employee.id && dropTarget?.dayIndex === idx}
                         />
                       )
                     })}
@@ -372,6 +461,12 @@ export function CalendarPage(): JSX.Element {
                 <span className="flex h-4 w-4 rounded-sm border border-gray-400 bg-gray-100"></span>
                 <span>Libre</span>
               </div>
+            </div>
+            <div className="mt-3 flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 p-3">
+              <span className="text-blue-600 font-semibold">💡</span>
+              <p className="text-xs text-blue-800">
+                <strong>Tip:</strong> Arrastra una celda con horario para copiar sus valores a otro día u otro empleado.
+              </p>
             </div>
           </div>
         </div>

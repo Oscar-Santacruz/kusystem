@@ -25,6 +25,20 @@ export interface DayCellProps {
   onClick?: () => void
   /** Callback al hacer doble click */
   onDoubleClick?: () => void
+  /** Callback cuando inicia el drag */
+  onDragStart?: () => void
+  /** Callback cuando termina el drag */
+  onDragEnd?: () => void
+  /** Callback cuando se arrastra sobre esta celda */
+  onDragOver?: (e: React.DragEvent) => void
+  /** Callback cuando se sale del hover durante drag */
+  onDragLeave?: () => void
+  /** Callback cuando se suelta sobre esta celda */
+  onDrop?: () => void
+  /** Si está siendo arrastrada */
+  isDragging?: boolean
+  /** Si es un target válido para drop */
+  isDropTarget?: boolean
 }
 
 const dayTypeConfig: Record<DayType, { bg: string; border: string; text: string }> = {
@@ -66,26 +80,52 @@ export function DayCell(props: DayCellProps): JSX.Element {
     onClick,
     onDoubleClick,
     date,
+    onDragStart,
+    onDragEnd,
+    onDragOver,
+    onDragLeave,
+    onDrop,
+    isDragging = false,
+    isDropTarget = false,
   } = props
 
   const config = dayTypeConfig[dayType]
   const showContent = dayType === 'laboral' && (clockIn || clockOut)
   const isToday = date ? isSameDay(date, new Date()) : false
+  const hasDragHandlers = onDragStart || onDragEnd || onDragOver || onDrop
 
   const combinedClassName = [
-    'relative z-10 rounded-md border bg-white p-2 text-[10px] leading-tight shadow-sm transition-shadow',
+    'relative z-10 rounded-md border bg-white p-2 text-[10px] leading-tight shadow-sm transition-all',
     config.bg,
     config.border,
     config.text,
     isToday && 'ring-2 ring-blue-300 shadow-md',
     onClick && 'cursor-pointer hover:shadow-md',
+    hasDragHandlers && showContent && 'cursor-move',
+    isDragging && 'opacity-50 scale-95',
+    isDropTarget && 'ring-2 ring-yellow-400 shadow-lg scale-105',
     className,
   ]
     .filter(Boolean)
     .join(' ')
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    onDragOver?.(e)
+  }
+
   return (
-    <div className={combinedClassName} onClick={onClick} onDoubleClick={onDoubleClick}>
+    <div
+      className={combinedClassName}
+      onClick={onClick}
+      onDoubleClick={onDoubleClick}
+      draggable={hasDragHandlers && showContent ? true : undefined}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragOver={handleDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+    >
       {showContent ? (
         <DayCellContent
           clockIn={clockIn}
