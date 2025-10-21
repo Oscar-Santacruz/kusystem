@@ -3,7 +3,7 @@ import { usePermission } from '@/hooks/usePermission'
 
 interface PermissionRouteProps {
   permission?: string
-  children: ReactNode
+  children?: ReactNode
 }
 
 export function PermissionRoute({ permission, children }: PermissionRouteProps) {

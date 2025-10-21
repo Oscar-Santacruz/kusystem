@@ -7,7 +7,7 @@ type RolePermissions = Record<string, string[]>
 interface PermissionMatrixProps {
   permissions: PermissionRow[]
   rolePermissions: RolePermissions
-  onUpdateRole: (role: string, permissions: string[]) => Promise<void>
+  onUpdateRole: (role: string, permissions: string[]) => Promise<{ ok: boolean }>
   isLoading?: boolean
 }
 

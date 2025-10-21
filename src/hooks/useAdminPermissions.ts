@@ -6,8 +6,6 @@ import { useOrgStore } from '@/lib/org-store'
 import { toast } from 'sonner'
 
 type Member = { id: string; role: string; user: { id: string; email: string | null; name: string | null } }
-type PermissionRow = { id: string; resource: string; action: string; description?: string | null }
-type RolePermissions = Record<string, string[]>
 
 interface DialogState {
   open: boolean
@@ -31,18 +29,11 @@ export function useAdminPermissions() {
     isSaving: false,
   })
 
-  const isReady = useMemo(() => {
-    const ready = Boolean(orgId && isAuthenticated && user?.sub)
-    console.log('[useAdminPermissions] isReady:', ready, { orgId, isAuthenticated, userSub: user?.sub })
-    return ready
-  }, [orgId, isAuthenticated, user?.sub])
+  const isReady = useMemo(() => Boolean(orgId && isAuthenticated && user?.sub), [orgId, isAuthenticated, user?.sub])
 
   const dashboard = useQuery({
     queryKey: ['admin-permissions-dashboard', orgId],
-    queryFn: () => {
-      console.log('[useAdminPermissions] Ejecutando fetch...')
-      return getRolePermissionsDashboard()
-    },
+    queryFn: () => getRolePermissionsDashboard(),
     enabled: isReady,
     staleTime: 30_000,
   })
@@ -117,7 +108,7 @@ export function useAdminPermissions() {
       permissions: dashboard.data?.permissions ?? [],
       rolePermissions: dashboard.data?.rolePermissions ?? {},
       onUpdateRole: (role: string, permissions: string[]) =>
-        updateRoleMutation.mutate({ role, permissions }),
+        updateRoleMutation.mutateAsync({ role, permissions }),
       isLoading: updateRoleMutation.isPending,
     },
 

@@ -1,8 +1,8 @@
-import type { ReactNode } from 'react'
+import type { ReactElement } from 'react'
 
 export interface ModuleRoute {
   path: string
-  element: ReactNode
+  element: ReactElement
   requiredPermission?: string
 }
 
