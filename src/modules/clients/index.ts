@@ -9,12 +9,12 @@ function el(c: any): ReactElement { return createElement(c) }
 export const clientsModule: ModuleDescriptor = {
   id: 'clients',
   routes: [
-    { path: 'clients', element: el(ClientsListPage) },
-    { path: 'clients/new', element: el(ClientNewPage) },
-    { path: 'clients/:id/edit', element: el(ClientEditPage) },
+    { path: 'clients', element: el(ClientsListPage), requiredPermission: 'clients:view' },
+    { path: 'clients/new', element: el(ClientNewPage), requiredPermission: 'clients:view' },
+    { path: 'clients/:id/edit', element: el(ClientEditPage), requiredPermission: 'clients:view' },
   ],
   nav: [
-    { label: 'Clientes', to: '/main/clients' },
+    { label: 'Clientes', to: '/main/clients', requiredPermission: 'clients:view' },
   ],
 }
 

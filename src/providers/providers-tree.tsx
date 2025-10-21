@@ -18,6 +18,7 @@ const queryClient = new QueryClient()
 function AuthBridge({ children }: { children: ReactNode }) {
   const { getAccessTokenSilently, isAuthenticated, user } = useAuth0()
   useEffect(() => {
+    console.log('[AuthBridge] isAuthenticated:', isAuthenticated, 'user:', user)
     ApiClient.setAuthTokenProvider(async () => {
       if (!isAuthenticated) return null
       try {
@@ -31,6 +32,7 @@ function AuthBridge({ children }: { children: ReactNode }) {
     // Encabezados puente para backend dev (getCurrentUser usa x-user-*)
     // En producción, esto debería ser reemplazado por validación JWT server-side
     if (isAuthenticated && user) {
+      console.log('[AuthBridge] Seteando headers:', { sub: user.sub, email: user.email, name: user.name })
       // Si cambia el usuario autenticado, reseteamos la org activa para evitar fugas entre cuentas
       try {
         const prevSub = localStorage.getItem('auth.user.sub')

@@ -1,12 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
-
-function getTenantId(): string {
-  const orgId = localStorage.getItem('orgId') || localStorage.getItem('organizationId')
-  if (!orgId) {
-    throw new Error('No tenant ID found. Please select an organization.')
-  }
-  return orgId
-}
+import { ApiInstance } from '@/services/api'
 
 export interface Employee {
   id: string
@@ -63,18 +55,7 @@ export interface ScheduleUpsertInput {
  * Obtiene los datos de la semana (empleados + horarios + adelantos)
  */
 export async function getWeekData(startDate: string): Promise<WeekData> {
-  const tenantId = getTenantId()
-  const res = await fetch(`${API_BASE}/hr/calendar/week?start=${startDate}`, {
-    headers: {
-      'X-Tenant-Id': tenantId,
-    },
-  })
-
-  if (!res.ok) {
-    throw new Error(`Error fetching week data: ${res.statusText}`)
-  }
-
-  return res.json()
+  return ApiInstance.get<WeekData>(`/hr/calendar/week?start=${startDate}`)
 }
 
 /**
@@ -85,38 +66,15 @@ export async function upsertSchedule(
   date: string,
   data: ScheduleUpsertInput
 ): Promise<{ ok: boolean }> {
-  const tenantId = getTenantId()
-  const res = await fetch(`${API_BASE}/hr/calendar/week/${employeeId}/${date}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Tenant-Id': tenantId,
-    },
-    body: JSON.stringify(data),
+  return ApiInstance.put<{ ok: boolean }>(`/hr/calendar/week/${employeeId}/${date}`, {
+    data,
+    headers: { 'Content-Type': 'application/json' },
   })
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ error: res.statusText }))
-    throw new Error(error.error || 'Error updating schedule')
-  }
-
-  return res.json()
 }
 
 /**
  * Obtiene la lista de empleados
  */
 export async function getEmployees(): Promise<Employee[]> {
-  const tenantId = getTenantId()
-  const res = await fetch(`${API_BASE}/hr/calendar/employees`, {
-    headers: {
-      'X-Tenant-Id': tenantId,
-    },
-  })
-
-  if (!res.ok) {
-    throw new Error(`Error fetching employees: ${res.statusText}`)
-  }
-
-  return res.json()
+  return ApiInstance.get<Employee[]>('/hr/calendar/employees')
 }

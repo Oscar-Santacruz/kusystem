@@ -20,7 +20,7 @@ export function PublicLandingPage() {
               Iniciar Sesión
             </Link>
             <Link
-              to="/register"
+              to="/login"
               className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50"
             >
               Comenzar Gratis

@@ -9,9 +9,9 @@ function el(c: any): ReactElement { return createElement(c) }
 export const clientBranchesModule: ModuleDescriptor = {
   id: 'client-branches',
   routes: [
-    { path: 'clients/:clientId/branches', element: el(BranchesListPage) },
-    { path: 'clients/:clientId/branches/new', element: el(BranchNewPage) },
-    { path: 'client-branches/:id/edit', element: el(BranchEditPage) },
+    { path: 'clients/:clientId/branches', element: el(BranchesListPage), requiredPermission: 'clients:view' },
+    { path: 'clients/:clientId/branches/new', element: el(BranchNewPage), requiredPermission: 'clients:view' },
+    { path: 'client-branches/:id/edit', element: el(BranchEditPage), requiredPermission: 'clients:view' },
   ],
 }
 

@@ -3,9 +3,13 @@ import { useAuth0 } from '@auth0/auth0-react'
 import { useEffect, useState } from 'react'
 import { ThemeToggleButton } from '@/shared/ui/theme'
 import { OrgSelector } from '@/components/org/OrgSelector'
+import { usePermission } from '@/hooks/usePermission'
 
 export function MainLayout() {
   const { user, isAuthenticated, isLoading, logout } = useAuth0()
+  const canManagePermissions = usePermission('admin:manage-permissions')
+  const canViewQuotes = usePermission('quotes:view')
+  const canViewHrCalendar = usePermission('hr-calendar:view')
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
     try {
       const raw = localStorage.getItem('ui.sidebarOpen')
@@ -17,7 +21,8 @@ export function MainLayout() {
 
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     gestion: true,
-    reportes: false
+    reportes: false,
+    rrhh: false,
   })
 
   useEffect(() => {
@@ -171,7 +176,7 @@ export function MainLayout() {
               )}
             </div>
 
-            {/* Sección Reportes (placeholder para futuro) */}
+            {/* Sección Reportes */}
             <div className="mt-2">
               <button
                 onClick={() => toggleSection('reportes')}
@@ -197,12 +202,81 @@ export function MainLayout() {
               
               {sidebarOpen && expandedSections.reportes && (
                 <div className="bg-slate-800/30">
-                  <div className="flex items-center gap-3 pl-8 pr-4 py-2 text-sm text-slate-500">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
-                    </svg>
-                    Próximamente...
-                  </div>
+                  {canViewQuotes ? (
+                    <NavLink
+                      to="/main/quotes/analytics"
+                      className={({ isActive }) => [
+                        'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
+                        isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
+                        sidebarOpen ? '' : 'md:pl-0 md:pr-0 md:justify-center md:gap-0',
+                      ].join(' ')}
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M3 3a1 1 0 000 2h1.268l1.236 7.416A2 2 0 007.474 14h5.052a2 2 0 001.97-1.584l1.26-6.3A1 1 0 0014.79 5H6.21l-.195-1.17A2 2 0 004.047 2H3z" />
+                        <path d="M9 16a2 2 0 104 0 2 2 0 00-4 0zM5 16a2 2 0 104 0 2 2 0 00-4 0z" />
+                      </svg>
+                      <span className={sidebarOpen ? '' : 'md:hidden'}>Dashboard</span>
+                    </NavLink>
+                  ) : (
+                    <div className="flex items-center gap-3 pl-8 pr-4 py-2 text-sm text-slate-500">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
+                      </svg>
+                      Próximamente...
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Sección RRHH */}
+            <div className="mt-2">
+              <button
+                onClick={() => toggleSection('rrhh')}
+                className={[
+                  'flex items-center w-full px-4 py-2 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-300 transition-colors',
+                  sidebarOpen ? 'justify-between' : 'md:justify-center',
+                ].join(' ')}
+              >
+                <div className="flex items-center gap-3">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 2a1 1 0 01.894.553l.764 1.528 1.687.245a1 1 0 01.555 1.706l-1.22 1.189.288 1.677a1 1 0 01-1.451 1.054L10 10.708l-1.517.799a1 1 0 01-1.451-1.054l.288-1.677-1.22-1.189a1 1 0 01.555-1.706l1.687-.245.764-1.528A1 1 0 0110 2z"/>
+                  </svg>
+                  <span className={sidebarOpen ? '' : 'md:hidden'}>RRHH</span>
+                </div>
+                <svg 
+                  className={`w-4 h-4 transition-transform ${expandedSections.rrhh ? 'rotate-90' : ''} ${sidebarOpen ? '' : 'md:hidden'}`}
+                  fill="currentColor" 
+                  viewBox="0 0 20 20"
+                >
+                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/>
+                </svg>
+              </button>
+
+              {sidebarOpen && expandedSections.rrhh && (
+                <div className="bg-slate-800/30">
+                  {canViewHrCalendar ? (
+                    <NavLink
+                      to="/main/hr/calendar"
+                      className={({ isActive }) => [
+                        'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
+                        isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
+                        sidebarOpen ? '' : 'md:pl-0 md:pr-0 md:justify-center md:gap-0',
+                      ].join(' ')}
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2h-1V0h-2v2H9V0H7v2H6zm0 2h8v2H6V4zm0 4h8v8H6V8z" />
+                      </svg>
+                      <span className={sidebarOpen ? '' : 'md:hidden'}>Calendario</span>
+                    </NavLink>
+                  ) : (
+                    <div className="flex items-center gap-3 pl-8 pr-4 py-2 text-sm text-slate-500">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
+                      </svg>
+                      Próximamente...
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -258,6 +332,21 @@ export function MainLayout() {
                     </svg>
                     <span className={sidebarOpen ? '' : 'md:hidden'}>Invitar</span>
                   </NavLink>
+                  {canManagePermissions ? (
+                    <NavLink
+                      to="/main/organization/permissions"
+                      className={({ isActive }) => [
+                        'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
+                        isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
+                        sidebarOpen ? '' : 'md:pl-0 md:pr-0 md:justify-center md:gap-0',
+                      ].join(' ')}
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4 5a1 1 0 011-1h10a1 1 0 011 1v2a1 1 0 01-1 1h-.382a2 2 0 00-1.894 1.316l-.447 1.342A2 2 0 0110.383 12H10a2 2 0 01-1.894-1.342l-.447-1.342A2 2 0 005.764 8H5a1 1 0 01-1-1V5zm3 8a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1H8a1 1 0 01-1-1v-2z" clipRule="evenodd" />
+                      </svg>
+                      <span className={sidebarOpen ? '' : 'md:hidden'}>Permisos</span>
+                    </NavLink>
+                  ) : null}
                 </div>
               )}
             </div>

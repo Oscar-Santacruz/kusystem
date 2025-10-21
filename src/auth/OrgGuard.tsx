@@ -2,7 +2,8 @@ import { type ReactNode, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth0 } from '@auth0/auth0-react'
 import { useOrgStore } from '@/lib/org-store'
-import { getMyOrganizations } from '@/services/org'
+import { getMyOrganizations, getMyPermissions } from '@/services/org'
+import { usePermissionsStore, type Permission } from '@/lib/permissions-store'
 
 interface OrgGuardProps {
   children: ReactNode
@@ -15,12 +16,15 @@ export function OrgGuard({ children }: OrgGuardProps) {
   const setOrgId = useOrgStore((s) => s.setOrgId)
   const setOrganizations = useOrgStore((s) => s.setOrganizations)
   const setCurrentOrg = useOrgStore((s) => s.setCurrentOrg)
+  const setPermissions = usePermissionsStore((s) => s.setPermissions)
+  const setIsOwner = usePermissionsStore((s) => s.setIsOwner)
+  const resetPermissions = usePermissionsStore((s) => s.reset)
   const { isAuthenticated, isLoading } = useAuth0()
   const resolvingRef = useRef(false)
   const retriedRef = useRef(false)
 
   useEffect(() => {
-    // Si no hay org activa, intentamos resolver automáticamente del backend
+    // Resolver organizaciones y cargar permisos
     async function resolveOrg() {
       if (resolvingRef.current) return
       resolvingRef.current = true
@@ -49,6 +53,7 @@ export function OrgGuard({ children }: OrgGuardProps) {
         setOrganizations(metas)
 
         if (list.length === 0) {
+          resetPermissions()
           if (!location.pathname.startsWith('/onboarding')) {
             navigate('/onboarding', { replace: true })
           }
@@ -63,11 +68,13 @@ export function OrgGuard({ children }: OrgGuardProps) {
         const currentId = orgId || list[0].tenant.id.toString()
         const cur = metas.find((m) => m.id === currentId) || null
         setCurrentOrg(cur)
+
         // Si estamos en onboarding pero ya existen organizaciones, enviar a inicio
         if (location.pathname.startsWith('/onboarding')) {
           navigate('/main/welcome', { replace: true })
         }
       } catch {
+        resetPermissions()
         if (!location.pathname.startsWith('/onboarding')) {
           navigate('/onboarding', { replace: true })
         }
@@ -76,13 +83,31 @@ export function OrgGuard({ children }: OrgGuardProps) {
       }
     }
 
+    // Cargar permisos cuando cambia el tenant activo
+    async function loadPermissions() {
+      try {
+        console.log('[OrgGuard] Cargando permisos para tenant:', orgId)
+        const perms = await getMyPermissions()
+        console.log('[OrgGuard] Permisos recibidos:', perms)
+        const normalized = (perms.permissions ?? [])
+          .filter((value): value is Permission => typeof value === 'string' && value.includes(':'))
+        setPermissions(normalized)
+        setIsOwner(perms.role === 'owner')
+      } catch (err) {
+        console.error('[OrgGuard] Error cargando permisos:', err)
+        resetPermissions()
+      }
+    }
+
     // No intentar resolver mientras Auth0 sigue cargando
     if (isLoading) return
 
     if (!orgId && isAuthenticated) {
       void resolveOrg()
+    } else if (orgId && isAuthenticated) {
+      void loadPermissions()
     }
-  }, [orgId, isAuthenticated, isLoading, navigate, location, setOrgId])
+  }, [orgId, isAuthenticated, isLoading, navigate, location, setOrgId, setPermissions, setIsOwner, resetPermissions])
 
   if (!orgId) return <div className="p-4 text-slate-300">Resolviendo organización…</div>
   return <>{children}</>

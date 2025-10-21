@@ -53,3 +53,36 @@ export async function listMembers() {
 export async function removeMember(userId: string) {
   return ApiInstance.delete<{ ok: boolean }>(`/members/${encodeURIComponent(userId)}`)
 }
+
+export type RolePermissionsDashboard = {
+  permissions: Array<{ id: string; resource: string; action: string; description: string | null }>
+  rolePermissions: Record<string, string[]>
+  members: Array<{ id: string; role: string; user: { id: string; email: string | null; name: string | null } }>
+}
+
+export async function getRolePermissionsDashboard() {
+  return ApiInstance.get<RolePermissionsDashboard>('/admin/permissions/roles')
+}
+
+export async function updateRolePermissions(role: string, permissions: string[]) {
+  return ApiInstance.patch<{ ok: boolean }>(`/admin/permissions/roles/${encodeURIComponent(role)}`, {
+    data: { permissions },
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+export async function updateMembershipRole(membershipId: string, role: string) {
+  return ApiInstance.patch<{ ok: boolean }>(`/admin/permissions/memberships/${encodeURIComponent(membershipId)}`, {
+    data: { role },
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+export type MyPermissionsResponse = {
+  role: string
+  permissions: string[]
+}
+
+export async function getMyPermissions() {
+  return ApiInstance.get<MyPermissionsResponse>('/members/me/permissions')
+}

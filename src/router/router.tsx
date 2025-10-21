@@ -14,6 +14,7 @@ import { CreateOrganizationPage } from '@/pages/organizations/create-organizatio
 import { InvitationAcceptPage } from '@/pages/invitations/invitation-accept-page'
 import { InviteMembersPage } from '@/pages/organizations/invite-members-page'
 import { MembersPage } from '@/pages/organizations/members-page'
+import { PermissionsPage } from '@/pages/organizations/permissions-page'
 
 // Lazy-load páginas pesadas para reducir el bundle principal (mapear named export -> default)
 const QuotePublicPage = lazy(() => import('@/modules/quotes/pages/QuotePublicPage').then(m => ({ default: m.QuotePublicPage })))
@@ -60,6 +61,7 @@ export const router = createBrowserRouter([
           { path: 'welcome', element: <WelcomePage /> },
           { path: 'organization/invite', element: <InviteMembersPage /> },
           { path: 'organization/members', element: <MembersPage /> },
+          { path: 'organization/permissions', element: <PermissionsPage /> },
           ...getMainChildrenRoutes(),
         ],
       },
