@@ -144,7 +144,7 @@ export function DayCell(props: DayCellProps): JSX.Element {
   }
 
   const combinedClassName = [
-    'relative z-10 rounded-md border bg-white p-2 text-[10px] leading-tight shadow-sm transition-all',
+    'relative z-10 rounded-md border bg-white p-2 text-[10px] leading-tight shadow-sm transition-all select-none',
     config.bg,
     config.border,
     config.text,
