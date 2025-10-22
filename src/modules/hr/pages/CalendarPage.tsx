@@ -51,6 +51,8 @@ export function CalendarPage(): JSX.Element {
     dayIndex: number
   } | null>(null)
 
+  const [isTouchCopyMode, setIsTouchCopyMode] = useState<boolean>(false)
+
   // Detect if device supports touch
   const [isTouchDevice, setIsTouchDevice] = useState<boolean>(false)
 
@@ -116,6 +118,8 @@ export function CalendarPage(): JSX.Element {
       showOvertime = overtimeHours > 0
     }
     
+    setIsTouchCopyMode(false)
+
     setModalData({
       isOpen: true,
       employeeId,
@@ -184,12 +188,14 @@ export function CalendarPage(): JSX.Element {
         'feriado': 'FERIADO',
       }
       
+      const hasAdvanceValue = modalData.advanceDisplayValue !== ''
+
       await upsertSchedule(modalData.employeeId, dateStr, {
         clockIn: modalData.clockIn || null,
         clockOut: modalData.clockOut || null,
         dayType: dayTypeMap[modalData.dayType],
         overtimeMinutes: Math.round(modalData.overtimeHours * 60),
-        advanceAmount: modalData.advance > 0 ? modalData.advance : null,
+        advanceAmount: hasAdvanceValue ? modalData.advance : null,
       })
       
       // Update last clock in
@@ -250,11 +256,14 @@ export function CalendarPage(): JSX.Element {
   // Handlers de drag & drop
   const handleDragStart = (employeeId: string, dayIndex: number, schedule: DaySchedule) => {
     setDragSource({ employeeId, dayIndex, schedule })
+    setDropTarget(null)
+    setIsTouchCopyMode(false)
   }
 
   const handleDragEnd = () => {
     setDragSource(null)
     setDropTarget(null)
+    setIsTouchCopyMode(false)
   }
 
   const handleDragOver = (employeeId: string, dayIndex: number) => {
@@ -275,6 +284,7 @@ export function CalendarPage(): JSX.Element {
     if (dragSource.employeeId === employeeId && dragSource.dayIndex === dayIndex) {
       setDragSource(null)
       setDropTarget(null)
+      setIsTouchCopyMode(false)
       return
     }
 
@@ -291,12 +301,14 @@ export function CalendarPage(): JSX.Element {
       }
       
       // Copiar los valores de la celda origen
+      const advanceAmount = dragSource.schedule.advance
+
       await upsertSchedule(employeeId, dateStr, {
         clockIn: dragSource.schedule.clockIn || null,
         clockOut: dragSource.schedule.clockOut || null,
         dayType: dayTypeMap[dragSource.schedule.dayType || 'laboral'],
         overtimeMinutes: Math.round((dragSource.schedule.overtimeHours || 0) * 60),
-        advanceAmount: dragSource.schedule.advance || null,
+        advanceAmount: advanceAmount ?? null,
       })
 
       // Recargar datos
@@ -308,7 +320,33 @@ export function CalendarPage(): JSX.Element {
     } finally {
       setDragSource(null)
       setDropTarget(null)
+      setIsTouchCopyMode(false)
     }
+  }
+
+  const handleTouchCopyStart = (employeeId: string, dayIndex: number, schedule: DaySchedule) => {
+    if (!isTouchDevice) return
+    setDragSource({ employeeId, dayIndex, schedule })
+    setDropTarget(null)
+    setIsTouchCopyMode(true)
+  }
+
+  const handleTouchCellTap = (
+    employeeId: string,
+    employeeName: string,
+    dayIndex: number,
+    schedule: DaySchedule,
+    date: Date,
+  ) => {
+    if (!isTouchDevice) return
+
+    if (isTouchCopyMode && dragSource) {
+      setDropTarget({ employeeId, dayIndex })
+      void handleDrop(employeeId, dayIndex, date)
+      return
+    }
+
+    handleDayCellInteraction(employeeId, employeeName, dayIndex, schedule, date)
   }
 
   return (
@@ -403,13 +441,27 @@ export function CalendarPage(): JSX.Element {
                           dayType={schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined}
                           date={dayMeta.date}
                           {...(isTouchDevice 
-                            ? { onClick: () => handleDayCellInteraction(employee.id, employee.name, idx, {
-                                clockIn: schedule?.clockIn || undefined,
-                                clockOut: schedule?.clockOut || undefined,
-                                advance: totalAdvance,
-                                overtimeHours,
-                                dayType: schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined,
-                              }, dayMeta.date) }
+                            ? { onClick: () => handleTouchCellTap(
+                                employee.id,
+                                employee.name,
+                                idx,
+                                {
+                                  clockIn: schedule?.clockIn || undefined,
+                                  clockOut: schedule?.clockOut || undefined,
+                                  advance: totalAdvance,
+                                  overtimeHours,
+                                  dayType: schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined,
+                                },
+                                dayMeta.date,
+                              ),
+                                onLongPress: () => handleTouchCopyStart(employee.id, idx, {
+                                  clockIn: schedule?.clockIn || undefined,
+                                  clockOut: schedule?.clockOut || undefined,
+                                  advance: totalAdvance,
+                                  overtimeHours,
+                                  dayType: schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined,
+                                })
+                              }
                             : { onDoubleClick: () => handleDayCellInteraction(employee.id, employee.name, idx, {
                                 clockIn: schedule?.clockIn || undefined,
                                 clockOut: schedule?.clockOut || undefined,
