@@ -52,7 +52,7 @@ export function OrgSelector() {
         <select
           value={current?.id ?? ''}
           onChange={onChange}
-          className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-slate-100"
+          className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs md:text-sm text-slate-100 max-w-[120px] md:max-w-none truncate"
           title={current ? `${current.name} (${current.role})` : 'Seleccionar organización'}
         >
           <option value="" disabled>

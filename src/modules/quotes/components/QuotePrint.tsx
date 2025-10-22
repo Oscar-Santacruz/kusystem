@@ -80,10 +80,11 @@ export interface QuotePrintProps {
   id?: string
   className?: string
   orgLogoUrl?: string | null
+  orgRuc?: string | null
 }
 
 export const QuotePrint = forwardRef<HTMLDivElement, QuotePrintProps>(function QuotePrint(
-  { quote: data, id, className, orgLogoUrl },
+  { quote: data, id, className, orgLogoUrl, orgRuc },
   ref
 ) {
   const computed = useMemo(() => {
@@ -144,6 +145,11 @@ export const QuotePrint = forwardRef<HTMLDivElement, QuotePrintProps>(function Q
           <div className="text-base font-semibold">
             {formatDateUpper(data.issueDate)}
           </div>
+          {orgRuc && (
+            <div className="mt-1 text-sm font-medium text-gray-700">
+              RUC: {orgRuc}
+            </div>
+          )}
           {/* Sucursal centrada se mostrará debajo, no la duplicamos aquí */}
         </div>
       </div>
@@ -158,6 +164,11 @@ export const QuotePrint = forwardRef<HTMLDivElement, QuotePrintProps>(function Q
           <div className="text-2xl font-extrabold text-black">
             {data.customerName}
           </div>
+          {data.customerRuc && (
+            <div className="mt-1 text-base font-medium text-black">
+              RUC: {data.customerRuc}
+            </div>
+          )}
         </div>
         <div className="flex flex-col items-center">
           {data.branchName ? (

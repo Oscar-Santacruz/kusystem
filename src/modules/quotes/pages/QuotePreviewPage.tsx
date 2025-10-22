@@ -8,7 +8,7 @@ export function QuotePreviewPage(): JSX.Element {
   const { id } = useParams<{ id: string }>()
   const { data, isLoading, isError, refetch } = useQuote(id)
   const printWrapperRef = useRef<HTMLDivElement>(null)
-  const { logoUrl: orgLogoUrl } = useCurrentOrganization()
+  const { logoUrl: orgLogoUrl, ruc: orgRuc } = useCurrentOrganization()
 
   // Meta noindex para evitar indexación accidental
   useEffect(() => {
@@ -62,7 +62,12 @@ export function QuotePreviewPage(): JSX.Element {
       ) : data ? (
         <div className="bg-slate-950">
           <div ref={printWrapperRef}>
-            <QuotePrint id="print-sheet-preview" quote={data} orgLogoUrl={orgLogoUrl ?? undefined} />
+            <QuotePrint
+              id="print-sheet-preview"
+              quote={data}
+              orgLogoUrl={orgLogoUrl ?? undefined}
+              orgRuc={orgRuc ?? undefined}
+            />
           </div>
         </div>
       ) : (

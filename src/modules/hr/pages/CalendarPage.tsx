@@ -1,4 +1,4 @@
-import { type JSX, useState, useEffect } from 'react'
+import { type JSX, useState, useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react'
 import { DayCell, EmployeeCard, type DayType } from '../components'
 import { FaChevronLeft, FaChevronRight, FaClock, FaDollarSign, FaUserClock } from 'react-icons/fa'
 import { addDays, format, startOfWeek } from 'date-fns'
@@ -51,10 +51,24 @@ export function CalendarPage(): JSX.Element {
     dayIndex: number
   } | null>(null)
 
-  const [isTouchCopyMode, setIsTouchCopyMode] = useState<boolean>(false)
+  // Estado para reordenar empleados
+  const [draggedEmployeeId, setDraggedEmployeeId] = useState<string | null>(null)
+  const [draggedOverEmployeeId, setDraggedOverEmployeeId] = useState<string | null>(null)
 
   // Detect if device supports touch
   const [isTouchDevice, setIsTouchDevice] = useState<boolean>(false)
+
+  const touchDragStateRef = useRef<null | {
+    pointerId: number
+    started: boolean
+    originEmployeeId: string
+    originEmployeeName: string
+    originDayIndex: number
+    originDate: Date
+    schedule: DaySchedule
+  }>(null)
+
+  const touchStartPointRef = useRef<{ x: number; y: number } | null>(null)
 
   useEffect(() => {
     const checkTouchDevice = () => {
@@ -74,7 +88,27 @@ export function CalendarPage(): JSX.Element {
         setLoadError(null)
         const startDate = format(currentWeekStart, 'yyyy-MM-dd')
         const data = await getWeekData(startDate)
-        setEmployees(data.employees)
+        
+        // Aplicar orden personalizado desde localStorage
+        const savedOrder = localStorage.getItem('hr-employee-order')
+        if (savedOrder) {
+          try {
+            const orderIds = JSON.parse(savedOrder) as string[]
+            const orderedEmployees = [...data.employees].sort((a, b) => {
+              const indexA = orderIds.indexOf(a.id)
+              const indexB = orderIds.indexOf(b.id)
+              if (indexA === -1 && indexB === -1) return 0
+              if (indexA === -1) return 1
+              if (indexB === -1) return -1
+              return indexA - indexB
+            })
+            setEmployees(orderedEmployees)
+          } catch {
+            setEmployees(data.employees)
+          }
+        } else {
+          setEmployees(data.employees)
+        }
       } catch (error) {
         console.error('Error loading week data:', error)
         setLoadError(error instanceof Error ? error.message : 'Error al cargar datos')
@@ -118,8 +152,6 @@ export function CalendarPage(): JSX.Element {
       showOvertime = overtimeHours > 0
     }
     
-    setIsTouchCopyMode(false)
-
     setModalData({
       isOpen: true,
       employeeId,
@@ -257,13 +289,11 @@ export function CalendarPage(): JSX.Element {
   const handleDragStart = (employeeId: string, dayIndex: number, schedule: DaySchedule) => {
     setDragSource({ employeeId, dayIndex, schedule })
     setDropTarget(null)
-    setIsTouchCopyMode(false)
   }
 
   const handleDragEnd = () => {
     setDragSource(null)
     setDropTarget(null)
-    setIsTouchCopyMode(false)
   }
 
   const handleDragOver = (employeeId: string, dayIndex: number) => {
@@ -284,7 +314,6 @@ export function CalendarPage(): JSX.Element {
     if (dragSource.employeeId === employeeId && dragSource.dayIndex === dayIndex) {
       setDragSource(null)
       setDropTarget(null)
-      setIsTouchCopyMode(false)
       return
     }
 
@@ -320,33 +349,180 @@ export function CalendarPage(): JSX.Element {
     } finally {
       setDragSource(null)
       setDropTarget(null)
-      setIsTouchCopyMode(false)
     }
   }
 
-  const handleTouchCopyStart = (employeeId: string, dayIndex: number, schedule: DaySchedule) => {
-    if (!isTouchDevice) return
-    setDragSource({ employeeId, dayIndex, schedule })
-    setDropTarget(null)
-    setIsTouchCopyMode(true)
+  const resetTouchDrag = () => {
+    touchDragStateRef.current = null
+    touchStartPointRef.current = null
   }
 
-  const handleTouchCellTap = (
+  const beginTouchDrag = (state: {
+    pointerId: number
+    originEmployeeId: string
+    originEmployeeName: string
+    originDayIndex: number
+    originDate: Date
+    schedule: DaySchedule
+  }) => {
+    handleDragStart(state.originEmployeeId, state.originDayIndex, state.schedule)
+    touchDragStateRef.current = { ...state, started: true }
+  }
+
+  const handleTouchPointerDown = (
+    event: ReactPointerEvent<HTMLDivElement>,
     employeeId: string,
     employeeName: string,
     dayIndex: number,
     schedule: DaySchedule,
     date: Date,
   ) => {
-    if (!isTouchDevice) return
-
-    if (isTouchCopyMode && dragSource) {
-      setDropTarget({ employeeId, dayIndex })
-      void handleDrop(employeeId, dayIndex, date)
+    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') {
       return
     }
 
-    handleDayCellInteraction(employeeId, employeeName, dayIndex, schedule, date)
+    touchDragStateRef.current = {
+      pointerId: event.pointerId,
+      started: false,
+      originEmployeeId: employeeId,
+      originEmployeeName: employeeName,
+      originDayIndex: dayIndex,
+      originDate: date,
+      schedule,
+    }
+    touchStartPointRef.current = { x: event.clientX, y: event.clientY }
+    setDropTarget(null)
+  }
+
+  const handleTouchPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const state = touchDragStateRef.current
+    if (!state || state.pointerId !== event.pointerId) return
+
+    const startPoint = touchStartPointRef.current
+    if (!startPoint) return
+
+    const deltaX = event.clientX - startPoint.x
+    const deltaY = event.clientY - startPoint.y
+
+    if (!state.started) {
+      if (Math.abs(deltaX) >= 8 || Math.abs(deltaY) >= 8) {
+        event.currentTarget.setPointerCapture?.(event.pointerId)
+        beginTouchDrag(state)
+      } else {
+        return
+      }
+    }
+
+    event.preventDefault()
+
+    const element = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null
+    if (!element) {
+      setDropTarget(null)
+      return
+    }
+
+    const cellEl = element.closest('[data-day-cell="true"]') as HTMLElement | null
+    if (!cellEl) {
+      setDropTarget(null)
+      return
+    }
+
+    const targetEmployeeId = cellEl.getAttribute('data-employee-id') ?? undefined
+    const dayIndexAttr = cellEl.getAttribute('data-day-index')
+    const targetDayIndex = typeof dayIndexAttr === 'string' ? Number(dayIndexAttr) : NaN
+
+    if (!targetEmployeeId || Number.isNaN(targetDayIndex)) {
+      setDropTarget(null)
+      return
+    }
+
+    if (targetEmployeeId === state.originEmployeeId && targetDayIndex === state.originDayIndex) {
+      setDropTarget(null)
+      return
+    }
+
+    setDropTarget({ employeeId: targetEmployeeId, dayIndex: targetDayIndex })
+  }
+
+  const handleTouchPointerEnd = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const state = touchDragStateRef.current
+    if (!state || state.pointerId !== event.pointerId) return
+
+    event.currentTarget.releasePointerCapture?.(event.pointerId)
+
+    if (!state.started) {
+      handleDayCellInteraction(
+        state.originEmployeeId,
+        state.originEmployeeName,
+        state.originDayIndex,
+        state.schedule,
+        state.originDate,
+      )
+      resetTouchDrag()
+      return
+    }
+
+    const target = dropTarget
+    if (target) {
+      const targetDayMeta = DAYS[target.dayIndex]
+      if (targetDayMeta) {
+        void handleDrop(target.employeeId, target.dayIndex, targetDayMeta.date)
+      } else {
+        handleDragEnd()
+      }
+    } else {
+      handleDragEnd()
+    }
+
+    resetTouchDrag()
+  }
+
+  const handleTouchPointerCancel = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const state = touchDragStateRef.current
+    if (!state || state.pointerId !== event.pointerId) return
+
+    event.currentTarget.releasePointerCapture?.(event.pointerId)
+    if (state.started) {
+      handleDragEnd()
+    }
+    resetTouchDrag()
+  }
+
+  // Handlers para reordenar empleados
+  const handleEmployeeDragStart = (employeeId: string) => {
+    setDraggedEmployeeId(employeeId)
+  }
+
+  const handleEmployeeDragOver = (e: React.DragEvent, employeeId: string) => {
+    e.preventDefault()
+    if (draggedEmployeeId && draggedEmployeeId !== employeeId) {
+      setDraggedOverEmployeeId(employeeId)
+    }
+  }
+
+  const handleEmployeeDragEnd = () => {
+    if (draggedEmployeeId && draggedOverEmployeeId && draggedEmployeeId !== draggedOverEmployeeId) {
+      const newEmployees = [...employees]
+      const draggedIndex = newEmployees.findIndex(e => e.id === draggedEmployeeId)
+      const targetIndex = newEmployees.findIndex(e => e.id === draggedOverEmployeeId)
+      
+      if (draggedIndex !== -1 && targetIndex !== -1) {
+        const [removed] = newEmployees.splice(draggedIndex, 1)
+        newEmployees.splice(targetIndex, 0, removed)
+        setEmployees(newEmployees)
+        
+        // Guardar orden en localStorage
+        const orderIds = newEmployees.map(e => e.id)
+        localStorage.setItem('hr-employee-order', JSON.stringify(orderIds))
+      }
+    }
+    
+    setDraggedEmployeeId(null)
+    setDraggedOverEmployeeId(null)
+  }
+
+  const handleEmployeeDragLeave = () => {
+    setDraggedOverEmployeeId(null)
   }
 
   return (
@@ -405,7 +581,19 @@ export function CalendarPage(): JSX.Element {
 
               {/* Filas de empleados */}
               {employees.map((employee) => (
-                <div key={employee.id} className="mb-3">
+                <div
+                  key={employee.id}
+                  className="mb-3 transition-all"
+                  draggable
+                  onDragStart={() => handleEmployeeDragStart(employee.id)}
+                  onDragOver={(e) => handleEmployeeDragOver(e, employee.id)}
+                  onDragEnd={handleEmployeeDragEnd}
+                  onDragLeave={handleEmployeeDragLeave}
+                  style={{
+                    opacity: draggedEmployeeId === employee.id ? 0.5 : 1,
+                    transform: draggedOverEmployeeId === employee.id ? 'scale(1.02)' : 'scale(1)',
+                  }}
+                >
                   <div className="grid grid-cols-[80px_repeat(7,minmax(90px,1fr))] gap-1 sm:grid-cols-[150px_repeat(7,minmax(80px,1fr))] sm:gap-1.5 lg:grid-cols-[120px_repeat(7,minmax(90px,1fr))] lg:gap-2">
                     {/* Card del empleado */}
                     <div className="flex items-start justify-start">
@@ -440,36 +628,55 @@ export function CalendarPage(): JSX.Element {
                           overtimeHours={overtimeHours}
                           dayType={schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined}
                           date={dayMeta.date}
-                          {...(isTouchDevice 
-                            ? { onClick: () => handleTouchCellTap(
-                                employee.id,
-                                employee.name,
-                                idx,
-                                {
-                                  clockIn: schedule?.clockIn || undefined,
-                                  clockOut: schedule?.clockOut || undefined,
-                                  advance: totalAdvance,
-                                  overtimeHours,
-                                  dayType: schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined,
-                                },
-                                dayMeta.date,
-                              ),
-                                onLongPress: () => handleTouchCopyStart(employee.id, idx, {
-                                  clockIn: schedule?.clockIn || undefined,
-                                  clockOut: schedule?.clockOut || undefined,
-                                  advance: totalAdvance,
-                                  overtimeHours,
-                                  dayType: schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined,
-                                })
+                          {...(!isTouchDevice
+                            ? {
+                                onDoubleClick: () => handleDayCellInteraction(
+                                  employee.id,
+                                  employee.name,
+                                  idx,
+                                  {
+                                    clockIn: schedule?.clockIn || undefined,
+                                    clockOut: schedule?.clockOut || undefined,
+                                    advance: totalAdvance,
+                                    overtimeHours,
+                                    dayType: schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined,
+                                  },
+                                  dayMeta.date,
+                                ),
+                                onClick: () => handleDayCellInteraction(
+                                  employee.id,
+                                  employee.name,
+                                  idx,
+                                  {
+                                    clockIn: schedule?.clockIn || undefined,
+                                    clockOut: schedule?.clockOut || undefined,
+                                    advance: totalAdvance,
+                                    overtimeHours,
+                                    dayType: schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined,
+                                  },
+                                  dayMeta.date,
+                                ),
                               }
-                            : { onDoubleClick: () => handleDayCellInteraction(employee.id, employee.name, idx, {
-                                clockIn: schedule?.clockIn || undefined,
-                                clockOut: schedule?.clockOut || undefined,
-                                advance: totalAdvance,
-                                overtimeHours,
-                                dayType: schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined,
-                              }, dayMeta.date) }
-                          )}
+                            : {
+                                onPointerDown: (event: React.PointerEvent<HTMLDivElement>) =>
+                                  handleTouchPointerDown(
+                                    event,
+                                    employee.id,
+                                    employee.name,
+                                    idx,
+                                    {
+                                      clockIn: schedule?.clockIn || undefined,
+                                      clockOut: schedule?.clockOut || undefined,
+                                      advance: totalAdvance,
+                                      overtimeHours,
+                                      dayType: schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined,
+                                    },
+                                    dayMeta.date,
+                                  ),
+                                onPointerMove: handleTouchPointerMove,
+                                onPointerUp: handleTouchPointerEnd,
+                                onPointerCancel: handleTouchPointerCancel,
+                              })}
                           onDragStart={() => handleDragStart(employee.id, idx, {
                             clockIn: schedule?.clockIn || undefined,
                             clockOut: schedule?.clockOut || undefined,
@@ -483,6 +690,8 @@ export function CalendarPage(): JSX.Element {
                           onDrop={() => handleDrop(employee.id, idx, dayMeta.date)}
                           isDragging={dragSource?.employeeId === employee.id && dragSource?.dayIndex === idx}
                           isDropTarget={dropTarget?.employeeId === employee.id && dropTarget?.dayIndex === idx}
+                          dataEmployeeId={employee.id}
+                          dataDayIndex={idx}
                         />
                       )
                     })}

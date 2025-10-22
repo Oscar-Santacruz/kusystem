@@ -3,6 +3,7 @@ import { useAuth0 } from '@auth0/auth0-react'
 import { useEffect, useState } from 'react'
 import { ThemeToggleButton } from '@/shared/ui/theme'
 import { OrgSelector } from '@/components/org/OrgSelector'
+import { OrgDisplay } from '@/components/org/OrgDisplay'
 import { usePermission } from '@/hooks/usePermission'
 
 export function MainLayout() {
@@ -54,6 +55,13 @@ export function MainLayout() {
     }))
   }
 
+  const closeSidebarOnMobile = () => {
+    // Solo cerrar en mobile
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false)
+    }
+  }
+
   return (
     <div className="flex flex-col h-screen bg-slate-950 text-slate-200 overflow-hidden">
       {/* Mobile header */}
@@ -64,36 +72,33 @@ export function MainLayout() {
         >
           {sidebarOpen ? '✕' : '☰'}
         </button>
-        <h1 className="text-lg font-semibold text-white select-none">kuSystem</h1>
-        <div className="w-10">
-          <ThemeToggleButton />
-        </div>
+        <OrgDisplay />
+        <ThemeToggleButton />
       </header>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar: menú jerárquico con categorías */}
         <aside 
-          className={`bg-slate-900 text-slate-100 flex flex-col fixed md:static z-20 w-64 h-full transition-all duration-300 ease-in-out transform ${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0 md:w-20'
+          className={`bg-slate-900 text-slate-100 flex flex-col fixed md:static z-20 w-64 transition-all duration-300 ease-in-out transform ${
+            sidebarOpen ? 'translate-x-0 h-[calc(100vh-64px)] top-[64px] md:top-0 md:h-full' : '-translate-x-full md:translate-x-0 md:w-20 h-full'
           }`}
         >
-          {/* Header del sidebar */}
-          <div className="p-4 border-b border-slate-800 flex-shrink-0">
-            <h1 className="text-lg font-semibold text-white whitespace-nowrap overflow-hidden">
-              {sidebarOpen ? 'kuSystem' : 'kS'}
-            </h1>
+          {/* Header del sidebar - solo visible en desktop */}
+          <div className="hidden md:flex p-4 border-b border-slate-800 flex-shrink-0 items-center justify-center">
+            {sidebarOpen && <OrgDisplay />}
           </div>
 
         {/* Navegación */}
         <nav className={[
           'flex-1',
-          'overflow-auto',
+          'overflow-y-auto overflow-x-hidden',
           sidebarOpen ? 'md:overflow-auto' : 'md:overflow-hidden',
         ].join(' ')}>
           <div className="min-h-full">
             {/* Inicio */}
             <NavLink
               to="/main/welcome"
+              onClick={closeSidebarOnMobile}
               className={({ isActive }) => [
                 'flex items-center gap-3 px-4 py-2 text-sm transition-colors',
                 isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-800 hover:text-white',
@@ -136,6 +141,7 @@ export function MainLayout() {
                   {canViewQuotes && (
                     <NavLink
                       to="/main/quotes"
+                      onClick={closeSidebarOnMobile}
                       className={({ isActive }) => [
                         'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
                         isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
@@ -152,6 +158,7 @@ export function MainLayout() {
                   {canViewClients && (
                     <NavLink
                       to="/main/clients"
+                      onClick={closeSidebarOnMobile}
                       className={({ isActive }) => [
                         'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
                         isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
@@ -168,6 +175,7 @@ export function MainLayout() {
                   {canViewProducts && (
                     <NavLink
                       to="/main/products"
+                      onClick={closeSidebarOnMobile}
                       className={({ isActive }) => [
                         'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
                         isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
@@ -213,6 +221,7 @@ export function MainLayout() {
                   {canViewQuotes ? (
                     <NavLink
                       to="/main/quotes/analytics"
+                      onClick={closeSidebarOnMobile}
                       className={({ isActive }) => [
                         'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
                         isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
@@ -266,6 +275,7 @@ export function MainLayout() {
                   {canViewHrCalendar ? (
                     <NavLink
                       to="/main/hr/calendar"
+                      onClick={closeSidebarOnMobile}
                       className={({ isActive }) => [
                         'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
                         isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
@@ -316,6 +326,7 @@ export function MainLayout() {
                 <div className="bg-slate-800/30">
                   <NavLink
                     to="/main/organization/members"
+                    onClick={closeSidebarOnMobile}
                     className={({ isActive }) => [
                       'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
                       isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
@@ -329,6 +340,7 @@ export function MainLayout() {
                   </NavLink>
                   <NavLink
                     to="/main/organization/invite"
+                    onClick={closeSidebarOnMobile}
                     className={({ isActive }) => [
                       'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
                       isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
@@ -343,6 +355,7 @@ export function MainLayout() {
                   {canManagePermissions ? (
                     <NavLink
                       to="/main/organization/permissions"
+                      onClick={closeSidebarOnMobile}
                       className={({ isActive }) => [
                         'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
                         isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
@@ -361,8 +374,8 @@ export function MainLayout() {
 
           </div>
         </nav>
-        {/* Usuario en la parte inferior */}
-        <div className="mt-auto border-t border-slate-800 p-4">
+        {/* Usuario en la parte inferior - siempre visible */}
+        <div className="flex-shrink-0 border-t border-slate-800 p-4">
           {isLoading ? (
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-slate-700 rounded-full animate-pulse"></div>

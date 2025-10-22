@@ -1,4 +1,4 @@
-import { type JSX, useRef, type DragEvent, type TouchEvent } from 'react'
+import { type JSX, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { isSameDay } from 'date-fns'
 import { MdAccessTime } from 'react-icons/md'
 import { BiLogIn, BiLogOut } from 'react-icons/bi'
@@ -25,7 +25,6 @@ export interface DayCellProps {
   onClick?: () => void
   /** Callback al hacer doble click */
   onDoubleClick?: () => void
-  onLongPress?: () => void
   /** Callback cuando inicia el drag */
   onDragStart?: () => void
   /** Callback cuando termina el drag */
@@ -40,6 +39,13 @@ export interface DayCellProps {
   isDragging?: boolean
   /** Si es un target válido para drop */
   isDropTarget?: boolean
+  /** Pointer event handlers (para soportar drag táctil personalizado) */
+  onPointerDown?: (event: ReactPointerEvent<HTMLDivElement>) => void
+  onPointerMove?: (event: ReactPointerEvent<HTMLDivElement>) => void
+  onPointerUp?: (event: ReactPointerEvent<HTMLDivElement>) => void
+  onPointerCancel?: (event: ReactPointerEvent<HTMLDivElement>) => void
+  dataEmployeeId?: string
+  dataDayIndex?: number
 }
 
 const dayTypeConfig: Record<DayType, { bg: string; border: string; text: string }> = {
@@ -80,7 +86,6 @@ export function DayCell(props: DayCellProps): JSX.Element {
     className,
     onClick,
     onDoubleClick,
-    onLongPress,
     date,
     onDragStart,
     onDragEnd,
@@ -89,62 +94,26 @@ export function DayCell(props: DayCellProps): JSX.Element {
     onDrop,
     isDragging = false,
     isDropTarget = false,
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+    onPointerCancel,
+    dataEmployeeId,
+    dataDayIndex,
   } = props
 
   const config = dayTypeConfig[dayType]
   const showContent = dayType === 'laboral' && (clockIn || clockOut)
   const isToday = date ? isSameDay(date, new Date()) : false
   const hasDragHandlers = onDragStart || onDragEnd || onDragOver || onDrop
-  const longPressTimeoutRef = useRef<number | null>(null)
-  const longPressTriggeredRef = useRef(false)
-
-  const clearLongPressTimeout = () => {
-    if (longPressTimeoutRef.current !== null) {
-      window.clearTimeout(longPressTimeoutRef.current)
-      longPressTimeoutRef.current = null
-    }
-  }
 
   const handleClick = () => {
-    if (longPressTriggeredRef.current) {
-      longPressTriggeredRef.current = false
-      return
-    }
     onClick?.()
   }
 
-  const handleTouchStart = () => {
-    if (!onLongPress) return
-    longPressTriggeredRef.current = false
-    clearLongPressTimeout()
-    longPressTimeoutRef.current = window.setTimeout(() => {
-      longPressTriggeredRef.current = true
-      longPressTimeoutRef.current = null
-      onLongPress()
-    }, 450)
-  }
-
-  const handleTouchMove = () => {
-    if (!onLongPress) return
-    clearLongPressTimeout()
-  }
-
-  const handleTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
-    if (!onLongPress) return
-    clearLongPressTimeout()
-    if (longPressTriggeredRef.current) {
-      event.preventDefault()
-      event.stopPropagation()
-    }
-  }
-
-  const handleTouchCancel = () => {
-    if (!onLongPress) return
-    clearLongPressTimeout()
-  }
-
   const combinedClassName = [
-    'relative z-10 rounded-md border bg-white p-2 text-[10px] leading-tight shadow-sm transition-all select-none',
+    'relative z-10 rounded-md border bg-white p-2 text-[10px] leading-tight shadow-sm transition-all select-none touch-manipulation',
+    '[user-select:none] [-webkit-user-select:none] [-webkit-touch-callout:none]',
     config.bg,
     config.border,
     config.text,
@@ -163,21 +132,37 @@ export function DayCell(props: DayCellProps): JSX.Element {
     onDragOver?.(e)
   }
 
+  const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (onPointerDown) {
+      e.preventDefault()
+    }
+  }
+
   return (
     <div
       className={combinedClassName}
       onClick={handleClick}
       onDoubleClick={onDoubleClick}
+      onContextMenu={handleContextMenu}
       draggable={hasDragHandlers && showContent ? true : undefined}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onDragOver={handleDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onTouchMove={handleTouchMove}
-      onTouchCancel={handleTouchCancel}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+      data-day-cell="true"
+      data-employee-id={dataEmployeeId}
+      data-day-index={typeof dataDayIndex === 'number' ? String(dataDayIndex) : undefined}
+      style={{
+        WebkitUserSelect: 'none',
+        userSelect: 'none',
+        WebkitTouchCallout: 'none',
+        touchAction: onPointerDown ? 'none' : 'manipulation'
+      } as React.CSSProperties}
     >
       {showContent ? (
         <DayCellContent

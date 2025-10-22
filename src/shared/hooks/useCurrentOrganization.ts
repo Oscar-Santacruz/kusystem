@@ -4,7 +4,7 @@ import { getMyOrganizations, type Organization } from '@/services/org'
 import { getEnv } from '@/config/env'
 import { useAuth0 } from '@auth0/auth0-react'
 
-export function useCurrentOrganization(): { organization: Organization | null, logoUrl: string | null, isLoading: boolean } {
+export function useCurrentOrganization(): { organization: Organization | null, logoUrl: string | null, ruc: string | null, isLoading: boolean } {
   const orgId = useOrgStore((s) => s.orgId)
   const currentOrgMeta = useOrgStore((s) => s.currentOrg)
   const setCurrentOrg = useOrgStore((s) => s.setCurrentOrg)
@@ -25,19 +25,27 @@ export function useCurrentOrganization(): { organization: Organization | null, l
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   })
-  // Resolver organization y logoUrl
+  // Resolver organization, logoUrl y ruc
   let organization: Organization | null = null
   let logoUrl: string | null = null
+  let ruc: string | null = null
 
   if (metaMatchesStore && currentOrgMeta) {
     // Preferir datos del store
-    organization = { id: currentOrgMeta.id, name: currentOrgMeta.name ?? null, logoUrl: currentOrgMeta.logoUrl ?? null } as unknown as Organization
+    organization = { 
+      id: currentOrgMeta.id, 
+      name: currentOrgMeta.name ?? null, 
+      logoUrl: currentOrgMeta.logoUrl ?? null,
+      ruc: (currentOrgMeta as any).ruc ?? null
+    } as unknown as Organization
     logoUrl = resolveLogoUrl(currentOrgMeta.logoUrl)
+    ruc = (currentOrgMeta as any).ruc ?? null
   } else {
     // Fallback a datos de la query
     const list = Array.isArray(data) ? data : []
     const found = list.find((m: import('@/services/org').Membership) => m.tenant?.id?.toString?.() === orgId || m.tenant?.id === orgId)?.tenant || null
     organization = found
+    ruc = found?.ruc ?? null
     
     // Si encontramos la org en la query, poblamos el store para próximas veces
     if (found && orgId) {
@@ -45,8 +53,9 @@ export function useCurrentOrganization(): { organization: Organization | null, l
         id: orgId,
         name: found.name ?? null,
         logoUrl: (found.logoUrl as string | null) ?? null,
+        ruc: found.ruc ?? null,
       }
-      setCurrentOrg(meta)
+      setCurrentOrg({ ...currentOrgMeta, ...meta } as any)
     }
     
     try {
@@ -58,7 +67,7 @@ export function useCurrentOrganization(): { organization: Organization | null, l
     }
   }
 
-  return { organization, logoUrl, isLoading: !metaMatchesStore && isLoading }
+  return { organization, logoUrl, ruc, isLoading: !metaMatchesStore && isLoading }
 
   function resolveLogoUrl(raw: string | null): string | null {
     if (!raw) return null

@@ -17,7 +17,7 @@ export function QuotePrintPage(): JSX.Element {
   const { data, isLoading, isError, refetch } = useQuote(id)
   const printRef = useRef<HTMLDivElement>(null)
   const handlePrint = useReactToPrint({ contentRef: printRef })
-  const { logoUrl: orgLogoUrl } = useCurrentOrganization()
+  const { logoUrl: orgLogoUrl, ruc: orgRuc } = useCurrentOrganization()
 
   if (isLoading) return <div className="p-6">Cargando…</div>
   if (isError) {
@@ -100,7 +100,13 @@ export function QuotePrintPage(): JSX.Element {
       </div>
 
       {/* Hoja de impresión (reutilizable) */}
-      <QuotePrint id="print-sheet" quote={data} ref={printRef} orgLogoUrl={orgLogoUrl ?? undefined} />
+      <QuotePrint
+        id="print-sheet"
+        quote={data}
+        ref={printRef}
+        orgLogoUrl={orgLogoUrl ?? undefined}
+        orgRuc={orgRuc ?? undefined}
+      />
     </div>
   )
 }

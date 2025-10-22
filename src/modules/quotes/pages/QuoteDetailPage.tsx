@@ -14,7 +14,7 @@ export function QuoteDetailPage(): JSX.Element {
   const { data, isLoading, isError, refetch } = useQuote(id)
   const printWrapperRef = useRef<HTMLDivElement>(null)
   const handlePrint = useReactToPrint({ contentRef: printWrapperRef })
-  const { logoUrl: orgLogoUrl } = useCurrentOrganization()
+  const { logoUrl: orgLogoUrl, ruc: orgRuc } = useCurrentOrganization()
 
   function onlyDigits(v: string | number | undefined | null): string {
     if (v == null) return ''
@@ -434,7 +434,12 @@ export function QuoteDetailPage(): JSX.Element {
               #print-sheet-detail .muted { color: #6b7280 !important; }
             `}</style>
             {/* Pasamos el logo de la organización para la impresión */}
-            <QuotePrint id="print-sheet-detail" quote={data} orgLogoUrl={orgLogoUrl ?? undefined} />
+            <QuotePrint
+              id="print-sheet-detail"
+              quote={data}
+              orgLogoUrl={orgLogoUrl ?? undefined}
+              orgRuc={orgRuc ?? undefined}
+            />
           </div>
         </div>
       ) : null}

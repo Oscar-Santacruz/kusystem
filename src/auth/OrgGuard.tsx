@@ -39,6 +39,7 @@ export function OrgGuard({ children }: OrgGuardProps) {
           id: m.tenant.id.toString(),
           name: m.tenant.name ?? null,
           logoUrl: (m.tenant.logoUrl as string | null) ?? null,
+          ruc: (m.tenant.ruc as string | null) ?? null,
         }))
         setOrganizations(metas)
 

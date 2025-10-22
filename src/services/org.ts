@@ -5,6 +5,7 @@ export type Organization = {
   name: string
   slug?: string | null
   logoUrl?: string | null
+  ruc?: string | null
 }
 
 export type Membership = {

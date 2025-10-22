@@ -29,6 +29,7 @@ export interface Quote {
   status?: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired'
   customerId?: string
   customerName: string
+  customerRuc?: string | null
   // Sucursal del cliente
   branchId?: string
   branchName?: string
