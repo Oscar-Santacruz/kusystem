@@ -1,4 +1,4 @@
-import { type JSX, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { type JSX } from 'react'
 import { isSameDay } from 'date-fns'
 import { MdAccessTime } from 'react-icons/md'
 import { BiLogIn, BiLogOut } from 'react-icons/bi'
@@ -23,29 +23,6 @@ export interface DayCellProps {
   className?: string
   /** Callback al hacer click */
   onClick?: () => void
-  /** Callback al hacer doble click */
-  onDoubleClick?: () => void
-  /** Callback cuando inicia el drag */
-  onDragStart?: () => void
-  /** Callback cuando termina el drag */
-  onDragEnd?: () => void
-  /** Callback cuando se arrastra sobre esta celda */
-  onDragOver?: (e: DragEvent<HTMLDivElement>) => void
-  /** Callback cuando se sale del hover durante drag */
-  onDragLeave?: () => void
-  /** Callback cuando se suelta sobre esta celda */
-  onDrop?: () => void
-  /** Si está siendo arrastrada */
-  isDragging?: boolean
-  /** Si es un target válido para drop */
-  isDropTarget?: boolean
-  /** Pointer event handlers (para soportar drag táctil personalizado) */
-  onPointerDown?: (event: ReactPointerEvent<HTMLDivElement>) => void
-  onPointerMove?: (event: ReactPointerEvent<HTMLDivElement>) => void
-  onPointerUp?: (event: ReactPointerEvent<HTMLDivElement>) => void
-  onPointerCancel?: (event: ReactPointerEvent<HTMLDivElement>) => void
-  dataEmployeeId?: string
-  dataDayIndex?: number
 }
 
 const dayTypeConfig: Record<DayType, { bg: string; border: string; text: string }> = {
@@ -85,84 +62,29 @@ export function DayCell(props: DayCellProps): JSX.Element {
     dayType = 'laboral',
     className,
     onClick,
-    onDoubleClick,
     date,
-    onDragStart,
-    onDragEnd,
-    onDragOver,
-    onDragLeave,
-    onDrop,
-    isDragging = false,
-    isDropTarget = false,
-    onPointerDown,
-    onPointerMove,
-    onPointerUp,
-    onPointerCancel,
-    dataEmployeeId,
-    dataDayIndex,
   } = props
 
   const config = dayTypeConfig[dayType]
   const showContent = dayType === 'laboral' && (clockIn || clockOut)
   const isToday = date ? isSameDay(date, new Date()) : false
-  const hasDragHandlers = onDragStart || onDragEnd || onDragOver || onDrop
-
-  const handleClick = () => {
-    onClick?.()
-  }
 
   const combinedClassName = [
-    'relative z-10 rounded-md border bg-white p-2 text-[10px] leading-tight shadow-sm transition-all select-none touch-manipulation',
-    '[user-select:none] [-webkit-user-select:none] [-webkit-touch-callout:none]',
+    'relative z-10 rounded-md border bg-white p-2 text-[10px] leading-tight shadow-sm transition-all',
     config.bg,
     config.border,
     config.text,
     isToday && 'ring-2 ring-blue-300 shadow-md',
-    onClick && 'cursor-pointer hover:shadow-md',
-    hasDragHandlers && showContent && 'cursor-move',
-    isDragging && 'opacity-50 scale-95',
-    isDropTarget && 'ring-2 ring-yellow-400 shadow-lg scale-105',
+    onClick && 'cursor-pointer hover:shadow-md hover:scale-[1.02]',
     className,
   ]
     .filter(Boolean)
     .join(' ')
 
-  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    onDragOver?.(e)
-  }
-
-  const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (onPointerDown) {
-      e.preventDefault()
-    }
-  }
-
   return (
     <div
       className={combinedClassName}
-      onClick={handleClick}
-      onDoubleClick={onDoubleClick}
-      onContextMenu={handleContextMenu}
-      draggable={hasDragHandlers && showContent ? true : undefined}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onDragOver={handleDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerCancel}
-      data-day-cell="true"
-      data-employee-id={dataEmployeeId}
-      data-day-index={typeof dataDayIndex === 'number' ? String(dataDayIndex) : undefined}
-      style={{
-        WebkitUserSelect: 'none',
-        userSelect: 'none',
-        WebkitTouchCallout: 'none',
-        touchAction: onPointerDown ? 'none' : 'manipulation'
-      } as React.CSSProperties}
+      onClick={onClick}
     >
       {showContent ? (
         <DayCellContent

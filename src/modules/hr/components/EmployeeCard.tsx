@@ -1,7 +1,7 @@
 import { type JSX, useEffect, useState } from 'react'
 import { MdAccessTime } from 'react-icons/md'
 import { PiCurrencyCircleDollarFill } from 'react-icons/pi'
-import { FaUser } from 'react-icons/fa'
+import { FaUser, FaArrowUp, FaArrowDown } from 'react-icons/fa'
 
 export interface EmployeeCardProps {
   /** URL de la foto de perfil del empleado */
@@ -18,6 +18,14 @@ export interface EmployeeCardProps {
   className?: string
   /** Callback al hacer click */
   onClick?: () => void
+  /** Callback para mover empleado hacia arriba */
+  onMoveUp?: () => void
+  /** Callback para mover empleado hacia abajo */
+  onMoveDown?: () => void
+  /** Si el botón de mover arriba debe estar deshabilitado */
+  canMoveUp?: boolean
+  /** Si el botón de mover abajo debe estar deshabilitado */
+  canMoveDown?: boolean
 }
 
 export function EmployeeCard(props: EmployeeCardProps): JSX.Element {
@@ -28,6 +36,10 @@ export function EmployeeCard(props: EmployeeCardProps): JSX.Element {
     weeklyAdvancesAmount,
     className,
     onClick,
+    onMoveUp,
+    onMoveDown,
+    canMoveUp = true,
+    canMoveDown = true,
   } = props
 
   const [isMobile, setIsMobile] = useState<boolean>(() => {
@@ -57,8 +69,58 @@ export function EmployeeCard(props: EmployeeCardProps): JSX.Element {
     .filter(Boolean)
     .join(' ')
 
+  const showReorderButtons = onMoveUp || onMoveDown
+
   return (
     <div className={combinedClassName} onClick={onClick}>
+      {/* Botones de reordenamiento */}
+      {showReorderButtons && (
+        <div className="absolute -left-9 sm:-left-10 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 z-20">
+          {onMoveUp && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                // Efecto de ripple visual
+                const button = e.currentTarget
+                button.style.animation = 'pulse 0.3s ease-in-out'
+                setTimeout(() => {
+                  button.style.animation = ''
+                }, 300)
+                onMoveUp()
+              }}
+              disabled={!canMoveUp}
+              className="group relative rounded-md bg-gradient-to-r from-blue-500 to-blue-600 p-2 text-white hover:from-blue-600 hover:to-blue-700 hover:scale-125 active:scale-110 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-300 shadow-lg hover:shadow-2xl hover:shadow-blue-500/25"
+              title="Mover arriba"
+              aria-label="Mover empleado hacia arriba"
+            >
+              <div className="absolute inset-0 rounded-md bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+              <FaArrowUp className="h-3.5 w-3.5 relative z-10 transition-transform duration-300 group-hover:-translate-y-0.5" />
+            </button>
+          )}
+          {onMoveDown && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                // Efecto de ripple visual
+                const button = e.currentTarget
+                button.style.animation = 'pulse 0.3s ease-in-out'
+                setTimeout(() => {
+                  button.style.animation = ''
+                }, 300)
+                onMoveDown()
+              }}
+              disabled={!canMoveDown}
+              className="group relative rounded-md bg-gradient-to-r from-blue-500 to-blue-600 p-2 text-white hover:from-blue-600 hover:to-blue-700 hover:scale-125 active:scale-110 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-300 shadow-lg hover:shadow-2xl hover:shadow-blue-500/25"
+              title="Mover abajo"
+              aria-label="Mover empleado hacia abajo"
+            >
+              <div className="absolute inset-0 rounded-md bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+              <FaArrowDown className="h-3.5 w-3.5 relative z-10 transition-transform duration-300 group-hover:translate-y-0.5" />
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Avatar */}
       <div className="relative flex w-full flex-col items-center gap-1.5">
         {avatarUrl ? (

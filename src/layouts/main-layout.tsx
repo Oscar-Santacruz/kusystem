@@ -273,20 +273,37 @@ export function MainLayout() {
               {sidebarOpen && expandedSections.rrhh && (
                 <div className="bg-slate-800/30">
                   {canViewHrCalendar ? (
-                    <NavLink
-                      to="/main/hr/calendar"
-                      onClick={closeSidebarOnMobile}
-                      className={({ isActive }) => [
-                        'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
-                        isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
-                        sidebarOpen ? '' : 'md:pl-0 md:pr-0 md:justify-center md:gap-0',
-                      ].join(' ')}
-                    >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2h-1V0h-2v2H9V0H7v2H6zm0 2h8v2H6V4zm0 4h8v8H6V8z" />
-                      </svg>
-                      <span className={sidebarOpen ? '' : 'md:hidden'}>Calendario</span>
-                    </NavLink>
+                    <>
+                      <NavLink
+                        to="/main/hr/calendar"
+                        onClick={closeSidebarOnMobile}
+                        className={({ isActive }) => [
+                          'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
+                          isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
+                          sidebarOpen ? '' : 'md:pl-0 md:pr-0 md:justify-center md:gap-0',
+                        ].join(' ')}
+                      >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2h-1V0h-2v2H9V0H7v2H6zm0 2h8v2H6V4zm0 4h8v8H6V8z" />
+                        </svg>
+                        <span className={sidebarOpen ? '' : 'md:hidden'}>Calendario</span>
+                      </NavLink>
+                      
+                      <NavLink
+                        to="/main/hr/reports"
+                        onClick={closeSidebarOnMobile}
+                        className={({ isActive }) => [
+                          'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
+                          isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
+                          sidebarOpen ? '' : 'md:pl-0 md:pr-0 md:justify-center md:gap-0',
+                        ].join(' ')}
+                      >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+                        </svg>
+                        <span className={sidebarOpen ? '' : 'md:hidden'}>Reportes</span>
+                      </NavLink>
+                    </>
                   ) : (
                     <div className="flex items-center gap-3 pl-8 pr-4 py-2 text-sm text-slate-500">
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">

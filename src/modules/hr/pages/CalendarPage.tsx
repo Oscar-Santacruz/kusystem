@@ -1,9 +1,11 @@
-import { type JSX, useState, useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react'
+import { type JSX, useState, useEffect } from 'react'
 import { DayCell, EmployeeCard, type DayType } from '../components'
 import { FaChevronLeft, FaChevronRight, FaClock, FaDollarSign, FaUserClock } from 'react-icons/fa'
 import { addDays, format, startOfWeek } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { getWeekData, upsertSchedule, type Employee } from '../api/calendarApi'
+import { useScheduleClipboard } from '../calendar/hooks/useScheduleClipboard'
+import { ScheduleContextMenu } from '../calendar/components/ScheduleContextMenu'
 
 // Tipo para las jornadas del calendario
 interface DaySchedule {
@@ -39,43 +41,18 @@ export function CalendarPage(): JSX.Element {
     saveMessage: string
   } | null>(null)
 
-  // Estado para drag & drop
-  const [dragSource, setDragSource] = useState<{
+  // Menú contextual
+  const [contextMenu, setContextMenu] = useState<{
+    x: number
+    y: number
     employeeId: string
     dayIndex: number
     schedule: DaySchedule
-  } | null>(null)
-  
-  const [dropTarget, setDropTarget] = useState<{
-    employeeId: string
-    dayIndex: number
+    date: Date
   } | null>(null)
 
-  // Estado para reordenar empleados
-  const [draggedEmployeeId, setDraggedEmployeeId] = useState<string | null>(null)
-  const [draggedOverEmployeeId, setDraggedOverEmployeeId] = useState<string | null>(null)
-
-  // Detect if device supports touch
-  const [isTouchDevice, setIsTouchDevice] = useState<boolean>(false)
-
-  const touchDragStateRef = useRef<null | {
-    pointerId: number
-    started: boolean
-    originEmployeeId: string
-    originEmployeeName: string
-    originDayIndex: number
-    originDate: Date
-    schedule: DaySchedule
-  }>(null)
-
-  const touchStartPointRef = useRef<{ x: number; y: number } | null>(null)
-
-  useEffect(() => {
-    const checkTouchDevice = () => {
-      setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0)
-    }
-    checkTouchDevice()
-  }, [])
+  // Hook de clipboard para copiar/pegar
+  const clipboard = useScheduleClipboard()
 
   // Last used clock in time for autocompletion
   const [lastClockIn, setLastClockIn] = useState<string>('08:00')
@@ -135,7 +112,7 @@ export function CalendarPage(): JSX.Element {
     return { label, date }
   })
 
-  const handleDayCellInteraction = (employeeId: string, employeeName: string, dayIndex: number, schedule: DaySchedule, date: Date) => {
+  const handleDayCellClick = (employeeId: string, employeeName: string, dayIndex: number, schedule: DaySchedule, date: Date) => {
     const clockIn = schedule?.clockIn || lastClockIn
     const clockOut = schedule?.clockOut || ''
     const advance = schedule?.advance || 0
@@ -197,6 +174,32 @@ export function CalendarPage(): JSX.Element {
     setModalData(null)
   }
 
+  const reloadWeekData = async () => {
+    const startDate = format(currentWeekStart, 'yyyy-MM-dd')
+    const data = await getWeekData(startDate)
+    
+    // Aplicar orden personalizado desde localStorage
+    const savedOrder = localStorage.getItem('hr-employee-order')
+    if (savedOrder) {
+      try {
+        const orderIds = JSON.parse(savedOrder) as string[]
+        const orderedEmployees = [...data.employees].sort((a, b) => {
+          const indexA = orderIds.indexOf(a.id)
+          const indexB = orderIds.indexOf(b.id)
+          if (indexA === -1 && indexB === -1) return 0
+          if (indexA === -1) return 1
+          if (indexB === -1) return -1
+          return indexA - indexB
+        })
+        setEmployees(orderedEmployees)
+      } catch {
+        setEmployees(data.employees)
+      }
+    } else {
+      setEmployees(data.employees)
+    }
+  }
+
   const handleSaveModal = async () => {
     if (!modalData) return
     
@@ -220,14 +223,12 @@ export function CalendarPage(): JSX.Element {
         'feriado': 'FERIADO',
       }
       
-      const hasAdvanceValue = modalData.advanceDisplayValue !== ''
-
       await upsertSchedule(modalData.employeeId, dateStr, {
         clockIn: modalData.clockIn || null,
         clockOut: modalData.clockOut || null,
         dayType: dayTypeMap[modalData.dayType],
         overtimeMinutes: Math.round(modalData.overtimeHours * 60),
-        advanceAmount: hasAdvanceValue ? modalData.advance : null,
+        advanceAmount: modalData.advance || 0,
       })
       
       // Update last clock in
@@ -238,9 +239,7 @@ export function CalendarPage(): JSX.Element {
       setModalData({ ...modalData, isSaving: false, saveMessage: 'Registro actualizado correctamente' })
       
       // Reload week data
-      const startDate = format(currentWeekStart, 'yyyy-MM-dd')
-      const data = await getWeekData(startDate)
-      setEmployees(data.employees)
+      await reloadWeekData()
       
       // Close modal after success message
       setTimeout(() => {
@@ -285,42 +284,31 @@ export function CalendarPage(): JSX.Element {
     setModalData({ ...modalData, dayType, validationErrors: {} })
   }
 
-  // Handlers de drag & drop
-  const handleDragStart = (employeeId: string, dayIndex: number, schedule: DaySchedule) => {
-    setDragSource({ employeeId, dayIndex, schedule })
-    setDropTarget(null)
+  // Handlers de menú contextual
+  const handleContextMenu = (e: React.MouseEvent, employeeId: string, dayIndex: number, schedule: DaySchedule, date: Date) => {
+    e.preventDefault()
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      employeeId,
+      dayIndex,
+      schedule,
+      date,
+    })
   }
 
-  const handleDragEnd = () => {
-    setDragSource(null)
-    setDropTarget(null)
+  const handleCopySchedule = () => {
+    if (!contextMenu) return
+    clipboard.copy(contextMenu.schedule)
   }
 
-  const handleDragOver = (employeeId: string, dayIndex: number) => {
-    // Solo permitir drop si es una celda diferente
-    if (dragSource && (dragSource.employeeId !== employeeId || dragSource.dayIndex !== dayIndex)) {
-      setDropTarget({ employeeId, dayIndex })
-    }
-  }
-
-  const handleDragLeave = () => {
-    setDropTarget(null)
-  }
-
-  const handleDrop = async (employeeId: string, dayIndex: number, date: Date) => {
-    if (!dragSource) return
-
-    // No copiar sobre la misma celda
-    if (dragSource.employeeId === employeeId && dragSource.dayIndex === dayIndex) {
-      setDragSource(null)
-      setDropTarget(null)
-      return
-    }
+  const handlePasteSchedule = async () => {
+    if (!contextMenu) return
+    const schedule = clipboard.paste()
+    if (!schedule) return
 
     try {
-      const dateStr = format(date, 'yyyy-MM-dd')
-      
-      // Map frontend dayType to backend DayType enum
+      const dateStr = format(contextMenu.date, 'yyyy-MM-dd')
       const dayTypeMap: Record<DayType, 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO'> = {
         'laboral': 'LABORAL',
         'ausente': 'AUSENTE',
@@ -328,201 +316,148 @@ export function CalendarPage(): JSX.Element {
         'no-laboral': 'NO_LABORAL',
         'feriado': 'FERIADO',
       }
-      
-      // Copiar los valores de la celda origen
-      const advanceAmount = dragSource.schedule.advance
 
-      await upsertSchedule(employeeId, dateStr, {
-        clockIn: dragSource.schedule.clockIn || null,
-        clockOut: dragSource.schedule.clockOut || null,
-        dayType: dayTypeMap[dragSource.schedule.dayType || 'laboral'],
-        overtimeMinutes: Math.round((dragSource.schedule.overtimeHours || 0) * 60),
-        advanceAmount: advanceAmount ?? null,
+      await upsertSchedule(contextMenu.employeeId, dateStr, {
+        clockIn: schedule.clockIn || null,
+        clockOut: schedule.clockOut || null,
+        dayType: dayTypeMap[schedule.dayType || 'laboral'],
+        overtimeMinutes: Math.round((schedule.overtimeHours || 0) * 60),
+        advanceAmount: schedule.advance ?? 0,
       })
 
-      // Recargar datos
-      const startDate = format(currentWeekStart, 'yyyy-MM-dd')
-      const data = await getWeekData(startDate)
-      setEmployees(data.employees)
+      await reloadWeekData()
     } catch (error) {
-      console.error('Error copiando horario:', error)
-    } finally {
-      setDragSource(null)
-      setDropTarget(null)
+      console.error('Error pegando horario:', error)
     }
   }
 
-  const resetTouchDrag = () => {
-    touchDragStateRef.current = null
-    touchStartPointRef.current = null
-  }
+  const handleDuplicateWeek = async () => {
+    if (!contextMenu) return
+    const { schedule, employeeId } = contextMenu
 
-  const beginTouchDrag = (state: {
-    pointerId: number
-    originEmployeeId: string
-    originEmployeeName: string
-    originDayIndex: number
-    originDate: Date
-    schedule: DaySchedule
-  }) => {
-    handleDragStart(state.originEmployeeId, state.originDayIndex, state.schedule)
-    touchDragStateRef.current = { ...state, started: true }
-  }
-
-  const handleTouchPointerDown = (
-    event: ReactPointerEvent<HTMLDivElement>,
-    employeeId: string,
-    employeeName: string,
-    dayIndex: number,
-    schedule: DaySchedule,
-    date: Date,
-  ) => {
-    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') {
-      return
-    }
-
-    touchDragStateRef.current = {
-      pointerId: event.pointerId,
-      started: false,
-      originEmployeeId: employeeId,
-      originEmployeeName: employeeName,
-      originDayIndex: dayIndex,
-      originDate: date,
-      schedule,
-    }
-    touchStartPointRef.current = { x: event.clientX, y: event.clientY }
-    setDropTarget(null)
-  }
-
-  const handleTouchPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const state = touchDragStateRef.current
-    if (!state || state.pointerId !== event.pointerId) return
-
-    const startPoint = touchStartPointRef.current
-    if (!startPoint) return
-
-    const deltaX = event.clientX - startPoint.x
-    const deltaY = event.clientY - startPoint.y
-
-    if (!state.started) {
-      if (Math.abs(deltaX) >= 8 || Math.abs(deltaY) >= 8) {
-        event.currentTarget.setPointerCapture?.(event.pointerId)
-        beginTouchDrag(state)
-      } else {
-        return
+    try {
+      const dayTypeMap: Record<DayType, 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO'> = {
+        'laboral': 'LABORAL',
+        'ausente': 'AUSENTE',
+        'libre': 'LIBRE',
+        'no-laboral': 'NO_LABORAL',
+        'feriado': 'FERIADO',
       }
+
+      // Duplicar a todos los días de la semana
+      const promises = DAYS.map(day => {
+        const dateStr = format(day.date, 'yyyy-MM-dd')
+        return upsertSchedule(employeeId, dateStr, {
+          clockIn: schedule.clockIn || null,
+          clockOut: schedule.clockOut || null,
+          dayType: dayTypeMap[schedule.dayType || 'laboral'],
+          overtimeMinutes: Math.round((schedule.overtimeHours || 0) * 60),
+          advanceAmount: schedule.advance ?? 0,
+        })
+      })
+
+      await Promise.all(promises)
+      await reloadWeekData()
+    } catch (error) {
+      console.error('Error duplicando a toda la semana:', error)
     }
-
-    event.preventDefault()
-
-    const element = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null
-    if (!element) {
-      setDropTarget(null)
-      return
-    }
-
-    const cellEl = element.closest('[data-day-cell="true"]') as HTMLElement | null
-    if (!cellEl) {
-      setDropTarget(null)
-      return
-    }
-
-    const targetEmployeeId = cellEl.getAttribute('data-employee-id') ?? undefined
-    const dayIndexAttr = cellEl.getAttribute('data-day-index')
-    const targetDayIndex = typeof dayIndexAttr === 'string' ? Number(dayIndexAttr) : NaN
-
-    if (!targetEmployeeId || Number.isNaN(targetDayIndex)) {
-      setDropTarget(null)
-      return
-    }
-
-    if (targetEmployeeId === state.originEmployeeId && targetDayIndex === state.originDayIndex) {
-      setDropTarget(null)
-      return
-    }
-
-    setDropTarget({ employeeId: targetEmployeeId, dayIndex: targetDayIndex })
   }
 
-  const handleTouchPointerEnd = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const state = touchDragStateRef.current
-    if (!state || state.pointerId !== event.pointerId) return
+  const handleDuplicateAllEmployees = async () => {
+    if (!contextMenu) return
+    const { schedule, dayIndex } = contextMenu
 
-    event.currentTarget.releasePointerCapture?.(event.pointerId)
-
-    if (!state.started) {
-      handleDayCellInteraction(
-        state.originEmployeeId,
-        state.originEmployeeName,
-        state.originDayIndex,
-        state.schedule,
-        state.originDate,
-      )
-      resetTouchDrag()
-      return
-    }
-
-    const target = dropTarget
-    if (target) {
-      const targetDayMeta = DAYS[target.dayIndex]
-      if (targetDayMeta) {
-        void handleDrop(target.employeeId, target.dayIndex, targetDayMeta.date)
-      } else {
-        handleDragEnd()
+    try {
+      const dayTypeMap: Record<DayType, 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO'> = {
+        'laboral': 'LABORAL',
+        'ausente': 'AUSENTE',
+        'libre': 'LIBRE',
+        'no-laboral': 'NO_LABORAL',
+        'feriado': 'FERIADO',
       }
-    } else {
-      handleDragEnd()
+
+      const targetDate = DAYS[dayIndex]?.date
+      if (!targetDate) return
+
+      const dateStr = format(targetDate, 'yyyy-MM-dd')
+
+      // Duplicar a todos los empleados en el mismo día
+      const promises = employees.map(employee => {
+        return upsertSchedule(employee.id, dateStr, {
+          clockIn: schedule.clockIn || null,
+          clockOut: schedule.clockOut || null,
+          dayType: dayTypeMap[schedule.dayType || 'laboral'],
+          overtimeMinutes: Math.round((schedule.overtimeHours || 0) * 60),
+          advanceAmount: schedule.advance ?? 0,
+        })
+      })
+
+      await Promise.all(promises)
+      await reloadWeekData()
+    } catch (error) {
+      console.error('Error duplicando a todos los empleados:', error)
     }
-
-    resetTouchDrag()
-  }
-
-  const handleTouchPointerCancel = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const state = touchDragStateRef.current
-    if (!state || state.pointerId !== event.pointerId) return
-
-    event.currentTarget.releasePointerCapture?.(event.pointerId)
-    if (state.started) {
-      handleDragEnd()
-    }
-    resetTouchDrag()
   }
 
   // Handlers para reordenar empleados
-  const handleEmployeeDragStart = (employeeId: string) => {
-    setDraggedEmployeeId(employeeId)
-  }
+  const handleMoveEmployeeUp = (employeeId: string) => {
+    const index = employees.findIndex(e => e.id === employeeId)
+    if (index <= 0) return
 
-  const handleEmployeeDragOver = (e: React.DragEvent, employeeId: string) => {
-    e.preventDefault()
-    if (draggedEmployeeId && draggedEmployeeId !== employeeId) {
-      setDraggedOverEmployeeId(employeeId)
+    // Agregar clase de animación a la fila que se mueve
+    const movingRow = document.querySelector(`[data-employee-id="${employeeId}"]`)
+    if (movingRow) {
+      movingRow.classList.add('animate-slide-up')
     }
-  }
 
-  const handleEmployeeDragEnd = () => {
-    if (draggedEmployeeId && draggedOverEmployeeId && draggedEmployeeId !== draggedOverEmployeeId) {
-      const newEmployees = [...employees]
-      const draggedIndex = newEmployees.findIndex(e => e.id === draggedEmployeeId)
-      const targetIndex = newEmployees.findIndex(e => e.id === draggedOverEmployeeId)
-      
-      if (draggedIndex !== -1 && targetIndex !== -1) {
-        const [removed] = newEmployees.splice(draggedIndex, 1)
-        newEmployees.splice(targetIndex, 0, removed)
-        setEmployees(newEmployees)
-        
-        // Guardar orden en localStorage
-        const orderIds = newEmployees.map(e => e.id)
-        localStorage.setItem('hr-employee-order', JSON.stringify(orderIds))
+    const newEmployees = [...employees]
+    const [removed] = newEmployees.splice(index, 1)
+    newEmployees.splice(index - 1, 0, removed)
+    setEmployees(newEmployees)
+
+    // Guardar en localStorage
+    localStorage.setItem('hr-employee-order', JSON.stringify(newEmployees.map(e => e.id)))
+
+    // Efecto de highlight DESPUÉS de que termine la animación de slide
+    setTimeout(() => {
+      const newRow = document.querySelector(`[data-employee-id="${employeeId}"]`)
+      if (newRow) {
+        newRow.classList.add('animate-highlight')
+        setTimeout(() => {
+          newRow.classList.remove('animate-highlight')
+        }, 600)
       }
-    }
-    
-    setDraggedEmployeeId(null)
-    setDraggedOverEmployeeId(null)
+    }, 300) // Esperar a que termine slideUp (0.3s)
   }
 
-  const handleEmployeeDragLeave = () => {
-    setDraggedOverEmployeeId(null)
+  const handleMoveEmployeeDown = (employeeId: string) => {
+    const index = employees.findIndex(e => e.id === employeeId)
+    if (index >= employees.length - 1) return
+
+    // Agregar clase de animación a la fila que se mueve
+    const movingRow = document.querySelector(`[data-employee-id="${employeeId}"]`)
+    if (movingRow) {
+      movingRow.classList.add('animate-slide-down')
+    }
+
+    const newEmployees = [...employees]
+    const [removed] = newEmployees.splice(index, 1)
+    newEmployees.splice(index + 1, 0, removed)
+    setEmployees(newEmployees)
+
+    // Guardar en localStorage
+    localStorage.setItem('hr-employee-order', JSON.stringify(newEmployees.map(e => e.id)))
+
+    // Efecto de highlight DESPUÉS de que termine la animación de slide
+    setTimeout(() => {
+      const newRow = document.querySelector(`[data-employee-id="${employeeId}"]`)
+      if (newRow) {
+        newRow.classList.add('animate-highlight')
+        setTimeout(() => {
+          newRow.classList.remove('animate-highlight')
+        }, 600)
+      }
+    }, 300) // Esperar a que termine slideDown (0.3s)
   }
 
   return (
@@ -568,7 +503,7 @@ export function CalendarPage(): JSX.Element {
                 </div>
               </div>
             ) : (
-            <div className="min-w-full">
+            <div className="min-w-full pl-10 sm:pl-12">
               {/* Header con dias */}
               <div className="mb-3 grid grid-cols-[80px_repeat(7,minmax(90px,1fr))] gap-1 text-[11px] sm:grid-cols-[150px_repeat(7,minmax(80px,1fr))] sm:gap-1.5 md:text-sm lg:grid-cols-[120px_repeat(7,minmax(90px,1fr))] lg:gap-2">
                 <div className="font-semibold text-gray-700">Empleado</div>
@@ -580,22 +515,17 @@ export function CalendarPage(): JSX.Element {
               </div>
 
               {/* Filas de empleados */}
-              {employees.map((employee) => (
-                <div
-                  key={employee.id}
-                  className="mb-3 transition-all"
-                  draggable
-                  onDragStart={() => handleEmployeeDragStart(employee.id)}
-                  onDragOver={(e) => handleEmployeeDragOver(e, employee.id)}
-                  onDragEnd={handleEmployeeDragEnd}
-                  onDragLeave={handleEmployeeDragLeave}
+              {employees.map((employee, employeeIndex) => (
+                <div 
+                  key={employee.id} 
+                  data-employee-id={employee.id}
+                  className="mb-3 transition-all duration-500 ease-in-out"
                   style={{
-                    opacity: draggedEmployeeId === employee.id ? 0.5 : 1,
-                    transform: draggedOverEmployeeId === employee.id ? 'scale(1.02)' : 'scale(1)',
+                    animation: 'fadeIn 0.3s ease-in-out'
                   }}
                 >
                   <div className="grid grid-cols-[80px_repeat(7,minmax(90px,1fr))] gap-1 sm:grid-cols-[150px_repeat(7,minmax(80px,1fr))] sm:gap-1.5 lg:grid-cols-[120px_repeat(7,minmax(90px,1fr))] lg:gap-2">
-                    {/* Card del empleado */}
+                    {/* Card del empleado con botones de reordenamiento */}
                     <div className="flex items-start justify-start">
                       <EmployeeCard
                         name={employee.name}
@@ -603,6 +533,10 @@ export function CalendarPage(): JSX.Element {
                         weeklyOvertimeHours={employee.weeklyOvertimeHours}
                         weeklyAdvances={employee.weeklyAdvances}
                         weeklyAdvancesAmount={employee.weeklyAdvancesAmount}
+                        onMoveUp={() => handleMoveEmployeeUp(employee.id)}
+                        onMoveDown={() => handleMoveEmployeeDown(employee.id)}
+                        canMoveUp={employeeIndex > 0}
+                        canMoveDown={employeeIndex < employees.length - 1}
                       />
                     </div>
 
@@ -619,80 +553,35 @@ export function CalendarPage(): JSX.Element {
                       const totalAdvance = schedule?.advances.reduce((sum, adv) => sum + adv.amount, 0) || 0
                       const overtimeHours = schedule ? Math.round(schedule.overtimeMinutes / 60 * 10) / 10 : 0
                       
+                      const scheduleData: DaySchedule = {
+                        clockIn: schedule?.clockIn || undefined,
+                        clockOut: schedule?.clockOut || undefined,
+                        advance: totalAdvance,
+                        overtimeHours,
+                        dayType: schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined,
+                      }
+
                       return (
-                        <DayCell
+                        <div
                           key={idx}
-                          clockIn={schedule?.clockIn || undefined}
-                          clockOut={schedule?.clockOut || undefined}
-                          advance={totalAdvance > 0 ? totalAdvance : undefined}
-                          overtimeHours={overtimeHours}
-                          dayType={schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined}
-                          date={dayMeta.date}
-                          {...(!isTouchDevice
-                            ? {
-                                onDoubleClick: () => handleDayCellInteraction(
-                                  employee.id,
-                                  employee.name,
-                                  idx,
-                                  {
-                                    clockIn: schedule?.clockIn || undefined,
-                                    clockOut: schedule?.clockOut || undefined,
-                                    advance: totalAdvance,
-                                    overtimeHours,
-                                    dayType: schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined,
-                                  },
-                                  dayMeta.date,
-                                ),
-                                onClick: () => handleDayCellInteraction(
-                                  employee.id,
-                                  employee.name,
-                                  idx,
-                                  {
-                                    clockIn: schedule?.clockIn || undefined,
-                                    clockOut: schedule?.clockOut || undefined,
-                                    advance: totalAdvance,
-                                    overtimeHours,
-                                    dayType: schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined,
-                                  },
-                                  dayMeta.date,
-                                ),
-                              }
-                            : {
-                                onPointerDown: (event: React.PointerEvent<HTMLDivElement>) =>
-                                  handleTouchPointerDown(
-                                    event,
-                                    employee.id,
-                                    employee.name,
-                                    idx,
-                                    {
-                                      clockIn: schedule?.clockIn || undefined,
-                                      clockOut: schedule?.clockOut || undefined,
-                                      advance: totalAdvance,
-                                      overtimeHours,
-                                      dayType: schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined,
-                                    },
-                                    dayMeta.date,
-                                  ),
-                                onPointerMove: handleTouchPointerMove,
-                                onPointerUp: handleTouchPointerEnd,
-                                onPointerCancel: handleTouchPointerCancel,
-                              })}
-                          onDragStart={() => handleDragStart(employee.id, idx, {
-                            clockIn: schedule?.clockIn || undefined,
-                            clockOut: schedule?.clockOut || undefined,
-                            advance: totalAdvance,
-                            overtimeHours,
-                            dayType: schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined,
-                          })}
-                          onDragEnd={handleDragEnd}
-                          onDragOver={() => handleDragOver(employee.id, idx)}
-                          onDragLeave={handleDragLeave}
-                          onDrop={() => handleDrop(employee.id, idx, dayMeta.date)}
-                          isDragging={dragSource?.employeeId === employee.id && dragSource?.dayIndex === idx}
-                          isDropTarget={dropTarget?.employeeId === employee.id && dropTarget?.dayIndex === idx}
-                          dataEmployeeId={employee.id}
-                          dataDayIndex={idx}
-                        />
+                          onContextMenu={(e) => handleContextMenu(e, employee.id, idx, scheduleData, dayMeta.date)}
+                        >
+                          <DayCell
+                            clockIn={schedule?.clockIn || undefined}
+                            clockOut={schedule?.clockOut || undefined}
+                            advance={totalAdvance > 0 ? totalAdvance : undefined}
+                            overtimeHours={overtimeHours}
+                            dayType={schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined}
+                            date={dayMeta.date}
+                            onClick={() => handleDayCellClick(
+                              employee.id,
+                              employee.name,
+                              idx,
+                              scheduleData,
+                              dayMeta.date,
+                            )}
+                          />
+                        </div>
                       )
                     })}
                   </div>
@@ -726,7 +615,7 @@ export function CalendarPage(): JSX.Element {
             <div className="mt-3 flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 p-3">
               <span className="text-blue-600 font-semibold">💡</span>
               <p className="text-xs text-blue-800">
-                <strong>Tip:</strong> Arrastra una celda con horario para copiar sus valores a otro día u otro empleado.
+                <strong>Tip:</strong> Click derecho en una celda para copiar/pegar horarios, duplicar a toda la semana o a todos los empleados. Usa las flechas junto al empleado para reordenar.
               </p>
             </div>
           </div>
@@ -928,6 +817,21 @@ export function CalendarPage(): JSX.Element {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Menú contextual */}
+        {contextMenu && (
+          <ScheduleContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            onClose={() => setContextMenu(null)}
+            onCopy={handleCopySchedule}
+            onPaste={handlePasteSchedule}
+            onDuplicateWeek={handleDuplicateWeek}
+            onDuplicateAllEmployees={handleDuplicateAllEmployees}
+            hasClipboard={clipboard.hasContent}
+            hasSchedule={Boolean(contextMenu.schedule.clockIn || contextMenu.schedule.clockOut)}
+          />
         )}
       </div>
     </div>
