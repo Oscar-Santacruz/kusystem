@@ -59,6 +59,12 @@ export interface ScheduleUpsertInput {
   notes?: string | null
 }
 
+export interface InitializeWeekInput {
+  startDate: string
+  clockIn: string
+  clockOut: string
+}
+
 /**
  * Obtiene los datos de la semana (empleados + horarios + adelantos)
  */
@@ -76,6 +82,18 @@ export async function upsertSchedule(
 ): Promise<{ ok: boolean }> {
   return ApiInstance.put<{ ok: boolean }>(`/hr/calendar/week/${employeeId}/${date}`, {
     data,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+export async function initializeWeekSchedules({ startDate, clockIn, clockOut }: InitializeWeekInput): Promise<{ ok: boolean; updatedSchedules: number }>
+{
+  return ApiInstance.post<{ ok: boolean; updatedSchedules: number }>(`/hr/calendar/week/initialize`, {
+    data: {
+      startDate,
+      clockIn,
+      clockOut,
+    },
     headers: { 'Content-Type': 'application/json' },
   })
 }

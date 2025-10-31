@@ -1,11 +1,12 @@
 import { type JSX, useState, useEffect } from 'react'
 import { DayCell, EmployeeCard, type DayType } from '../components'
-import { FaChevronLeft, FaChevronRight, FaClock, FaDollarSign, FaUserClock } from 'react-icons/fa'
+import { FaChevronLeft, FaChevronRight, FaClock, FaDollarSign, FaUserClock, FaCalendarPlus } from 'react-icons/fa'
 import { addDays, format, startOfWeek } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { getWeekData, upsertSchedule, type Employee } from '../api/calendarApi'
+import { getWeekData, upsertSchedule, initializeWeekSchedules, type Employee } from '../api/calendarApi'
 import { useScheduleClipboard } from '../calendar/hooks/useScheduleClipboard'
 import { ScheduleContextMenu } from '../calendar/components/ScheduleContextMenu'
+import { WeekInitializerModal, type WeekInitializerField, type WeekInitializerErrors } from '../calendar/components/WeekInitializerModal'
 
 // Tipo para las jornadas del calendario
 interface DaySchedule {
@@ -15,7 +16,6 @@ interface DaySchedule {
   overtimeHours?: number
   dayType?: DayType
 }
-
 
 export function CalendarPage(): JSX.Element {
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => startOfWeek(new Date(), { weekStartsOn: 1 }))
@@ -56,6 +56,15 @@ export function CalendarPage(): JSX.Element {
 
   // Last used clock in time for autocompletion
   const [lastClockIn, setLastClockIn] = useState<string>('08:00')
+
+  const [weekInitializer, setWeekInitializer] = useState({
+    isOpen: false,
+    clockIn: '08:00',
+    clockOut: '17:00',
+    errors: {} as WeekInitializerErrors,
+    isSubmitting: false,
+    successMessage: null as string | null,
+  })
 
   // Load week data
   useEffect(() => {
@@ -252,6 +261,87 @@ export function CalendarPage(): JSX.Element {
     }
   }
 
+  const openWeekInitializer = () => {
+    setWeekInitializer(prev => ({
+      ...prev,
+      isOpen: true,
+      successMessage: null,
+      errors: {},
+      clockIn: lastClockIn,
+    }))
+  }
+
+  const closeWeekInitializer = () => {
+    setWeekInitializer(prev => ({ ...prev, isOpen: false, isSubmitting: false, successMessage: null }))
+  }
+
+  const updateWeekInitializerField = (field: WeekInitializerField, value: string) => {
+    setWeekInitializer(prev => ({
+      ...prev,
+      [field]: value,
+      errors: { ...prev.errors, [field]: undefined },
+    }))
+  }
+
+  const validateWeekInitializer = (): WeekInitializerErrors => {
+    const errors: WeekInitializerErrors = {}
+    if (!weekInitializer.clockIn) {
+      errors.clockIn = 'Hora de entrada requerida'
+    }
+    if (!weekInitializer.clockOut) {
+      errors.clockOut = 'Hora de salida requerida'
+    }
+    if (weekInitializer.clockIn && weekInitializer.clockOut) {
+      const inDate = new Date(`1970-01-01T${weekInitializer.clockIn}:00`)
+      const outDate = new Date(`1970-01-01T${weekInitializer.clockOut}:00`)
+      if (outDate <= inDate) {
+        errors.clockOut = 'La salida debe ser posterior a la entrada'
+      }
+    }
+    return errors
+  }
+
+  const submitWeekInitializer = async () => {
+    const errors = validateWeekInitializer()
+    if (Object.keys(errors).length > 0) {
+      setWeekInitializer(prev => ({ ...prev, errors }))
+      return
+    }
+
+    setWeekInitializer(prev => ({ ...prev, isSubmitting: true, errors: {} }))
+
+    try {
+      const startDate = format(currentWeekStart, 'yyyy-MM-dd')
+      await initializeWeekSchedules({
+        startDate,
+        clockIn: weekInitializer.clockIn,
+        clockOut: weekInitializer.clockOut,
+      })
+
+      setLastClockIn(weekInitializer.clockIn)
+      await reloadWeekData()
+      setWeekInitializer(prev => ({
+        ...prev,
+        isSubmitting: false,
+        successMessage: 'Semana inicializada correctamente',
+      }))
+
+      setTimeout(() => {
+        setWeekInitializer(prev => ({ ...prev, isOpen: false, successMessage: null }))
+      }, 1500)
+    } catch (error) {
+      console.error('Error inicializando semana:', error)
+      setWeekInitializer(prev => ({
+        ...prev,
+        isSubmitting: false,
+        errors: {
+          ...prev.errors,
+          general: error instanceof Error ? error.message : 'Error al inicializar la semana',
+        },
+      }))
+    }
+  }
+
   const updateModalField = (field: string, value: any) => {
     if (!modalData) return
     
@@ -309,6 +399,8 @@ export function CalendarPage(): JSX.Element {
 
     try {
       const dateStr = format(contextMenu.date, 'yyyy-MM-dd')
+      
+      // Map frontend dayType to backend DayType enum
       const dayTypeMap: Record<DayType, 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO'> = {
         'laboral': 'LABORAL',
         'ausente': 'AUSENTE',
@@ -480,9 +572,18 @@ export function CalendarPage(): JSX.Element {
                 <h2 className="text-xl font-bold text-gray-900">Calendario Semanal</h2>
                 <p className="text-sm text-gray-600">{`Semana del ${format(currentWeekStart, 'dd')} al ${format(addDays(currentWeekStart, 6), 'dd')} de ${format(currentWeekStart, 'MMMM', { locale: es }).charAt(0).toUpperCase() + format(currentWeekStart, 'MMMM', { locale: es }).slice(1)}`}</p>
               </div>
-              <button onClick={handleNextWeek} className="rounded-lg p-2 hover:bg-gray-200 transition-colors">
-                <FaChevronRight className="h-5 w-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={openWeekInitializer}
+                  className="flex items-center gap-2 rounded-lg border border-green-500 bg-green-100 px-3 py-2 text-sm font-medium text-green-700 transition-colors hover:bg-green-200"
+                >
+                  <FaCalendarPlus className="h-4 w-4" />
+                  Inicializar semana
+                </button>
+                <button onClick={handleNextWeek} className="rounded-lg p-2 hover:bg-gray-200 transition-colors">
+                  <FaChevronRight className="h-5 w-5" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -833,6 +934,18 @@ export function CalendarPage(): JSX.Element {
             hasSchedule={Boolean(contextMenu.schedule.clockIn || contextMenu.schedule.clockOut)}
           />
         )}
+
+        <WeekInitializerModal
+          isOpen={weekInitializer.isOpen}
+          clockIn={weekInitializer.clockIn}
+          clockOut={weekInitializer.clockOut}
+          errors={weekInitializer.errors}
+          isSubmitting={weekInitializer.isSubmitting}
+          successMessage={weekInitializer.successMessage}
+          onClose={closeWeekInitializer}
+          onFieldChange={updateWeekInitializerField}
+          onSubmit={submitWeekInitializer}
+        />
       </div>
     </div>
   )
