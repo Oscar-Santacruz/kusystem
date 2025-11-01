@@ -5,7 +5,7 @@ import type { ReportData, Employee } from '../api/calendarApi'
 import type { ReportFilters } from './types'
 
 interface Props {
-  reportRef: React.RefObject<HTMLDivElement>
+  reportRef: React.RefObject<HTMLDivElement | null>
   reportData: ReportData | null
   filters: ReportFilters
   onError?: (message: string) => void
