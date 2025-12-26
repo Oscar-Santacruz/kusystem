@@ -118,7 +118,7 @@ export function ItemsSection(props: ItemsSectionProps): JSX.Element {
                 key={idx}
                 draggable
                 onDragStart={(e) => {
-                  try { e.dataTransfer.setData('text/plain', String(idx)) } catch {}
+                  try { e.dataTransfer.setData('text/plain', String(idx)) } catch { }
                   // efecto visual
                   e.currentTarget.classList.add('opacity-60')
                 }}
@@ -162,10 +162,10 @@ export function ItemsSection(props: ItemsSectionProps): JSX.Element {
                   <input
                     type="number"
                     min={0}
-                    step={1}
+                    step={0.01}
                     className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-right text-white outline-none"
                     value={it.quantity}
-                    onChange={(e) => onUpdateItem(idx, { quantity: Math.max(0, Math.trunc(Number(e.target.value) || 0)) })}
+                    onChange={(e) => onUpdateItem(idx, { quantity: Math.max(0, Number(e.target.value) || 0) })}
                   />
                 </td>
                 <td className="border border-slate-800 px-3 py-2 text-right">

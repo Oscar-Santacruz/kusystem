@@ -18,7 +18,7 @@ import { GeneralSection } from '@/modules/quotes/components/GeneralSection'
 import { ClientSelector } from '@/modules/quotes/components/ClientSelector'
 import { MobileActionBar } from '@/shared/ui/mobile-action-bar'
 
-export interface QuoteFormValues extends CreateQuoteInput {}
+export interface QuoteFormValues extends CreateQuoteInput { }
 
 function toISOLocalDateString(value?: string | number | Date): string {
   if (value == null) return getTodayISOLocal()
@@ -122,7 +122,7 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
   // Combobox control interno movido a ClientSelector
 
   // Formateo con separador de miles para PYG (sin decimales)
-  const nf = useMemo(() => new Intl.NumberFormat('es-AR', { useGrouping: true, minimumFractionDigits: 0, maximumFractionDigits: 0 }), [])
+  const nf = useMemo(() => new Intl.NumberFormat('es-AR', { useGrouping: true, minimumFractionDigits: 0, maximumFractionDigits: 2 }), [])
   function formatPrice(n: number): string {
     return nf.format(Number.isFinite(n) ? n : 0)
   }
@@ -207,7 +207,7 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
     const id = setTimeout(() => {
       try {
         localStorage.setItem('quoteFormDraft', JSON.stringify(values))
-      } catch {}
+      } catch { }
     }, 600)
     return () => clearTimeout(id)
   }, [values])
@@ -228,7 +228,7 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
             }
           }
         }
-      } catch {}
+      } catch { }
     }
   }, [initialValues])
 
@@ -312,165 +312,165 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
       return
     }
     await onSubmit(values)
-    try { localStorage.removeItem('quoteFormDraft') } catch {}
+    try { localStorage.removeItem('quoteFormDraft') } catch { }
   }
 
   return (
     <>
-    <form
-      className="space-y-4 min-[1020px]:pr-[26rem] pb-24 min-[1020px]:pb-0"
-      onSubmit={async (e) => {
-        e.preventDefault()
-        setFormError(null)
-        if (!canSubmit || dateInvalid) {
-          setFormError(dateInvalid ? 'La fecha de vencimiento no puede ser anterior a la emisión.' : 'Selecciona un cliente y agrega al menos un ítem.')
-          return
-        }
-        await onSubmit(values)
-        try { localStorage.removeItem('quoteFormDraft') } catch {}
-      }}
-    >
-      {/* Encabezado sin logo */}
+      <form
+        className="space-y-4 min-[1020px]:pr-[26rem] pb-24 min-[1020px]:pb-0"
+        onSubmit={async (e) => {
+          e.preventDefault()
+          setFormError(null)
+          if (!canSubmit || dateInvalid) {
+            setFormError(dateInvalid ? 'La fecha de vencimiento no puede ser anterior a la emisión.' : 'Selecciona un cliente y agrega al menos un ítem.')
+            return
+          }
+          await onSubmit(values)
+          try { localStorage.removeItem('quoteFormDraft') } catch { }
+        }}
+      >
+        {/* Encabezado sin logo */}
 
-      {formError ? (
-        <div className="rounded border border-red-700 bg-red-950 px-3 py-2 text-red-200" role="alert">
-          {formError}
-        </div>
-      ) : null}
+        {formError ? (
+          <div className="rounded border border-red-700 bg-red-950 px-3 py-2 text-red-200" role="alert">
+            {formError}
+          </div>
+        ) : null}
 
-      {/* Información General */}
-      <div className="rounded-lg border border-slate-700 bg-slate-900/50 p-6">
-        <h3 className="mb-4 text-lg font-semibold text-slate-200">📋 Información General</h3>
-        
-        {/* Cliente */}
-        <ClientSelector
-          valueId={values.customerId}
-          clientSearch={clientSearch}
-          setClientSearch={setClientSearch}
-          clients={clients}
-          onSelectClient={(id, name) => {
-            handleChange('customerId', id)
-            handleChange('customerName', name)
-            // resetear sucursal al cambiar de cliente
-            handleChange('branchId', undefined)
-            handleChange('branchName', '')
-          }}
-          onOpenCreateClient={() => openClientModal()}
-        />
+        {/* Información General */}
+        <div className="rounded-lg border border-slate-700 bg-slate-900/50 p-6">
+          <h3 className="mb-4 text-lg font-semibold text-slate-200">📋 Información General</h3>
 
-        <div className="mt-4">
-          <GeneralSection
-            issueDate={values.issueDate || ''}
-            dueInDays={dueInDays}
-            dueDate={values.dueDate || ''}
-            onChangeDueInDays={(n) => setDueInDays(n)}
-            onChangeIssueDate={(d) => handleChange('issueDate', d)}
-            customerId={values.customerId}
-            branchId={values.branchId}
-            branchName={values.branchName}
-            showBranchSelector={showBranchSelector}
-            setShowBranchSelector={(v) => {
-              setShowBranchSelector(v)
-              if (!v) setValues(prev => ({ ...prev, branchId: undefined, branchName: '' }))
+          {/* Cliente */}
+          <ClientSelector
+            valueId={values.customerId}
+            clientSearch={clientSearch}
+            setClientSearch={setClientSearch}
+            clients={clients}
+            onSelectClient={(id, name) => {
+              handleChange('customerId', id)
+              handleChange('customerName', name)
+              // resetear sucursal al cambiar de cliente
+              handleChange('branchId', undefined)
+              handleChange('branchName', '')
             }}
-            branches={branches}
-            onSelectBranch={(branchId, branchName) => setValues(prev => ({ ...prev, branchId, branchName }))}
+            onOpenCreateClient={() => openClientModal()}
           />
-        </div>
-      </div>
 
-      {/* Items */}
-      <div className="rounded-lg border border-slate-700 bg-slate-900/50 p-6">
-        <h3 className="mb-4 text-lg font-semibold text-slate-200">📦 Items</h3>
-        
-        {/* Productos / Ítems */}
-        <ItemsSection
-          productSearch={productSearch}
-          setProductSearch={setProductSearch}
-          productSearchRef={productSearchRef}
-          products={products}
-          onOpenCreateProduct={() => setOpenProductModal(true)}
-          onAddFromProduct={(p) => addItemFromProduct(p)}
-          onUpdateItem={(i, patch) => updateItem(i, patch)}
-          onRemoveItem={(i) => removeItem(i)}
-          onReorderItems={(from, to) => reorderItems(from, to)}
-          items={values.items ?? []}
-          formatPrice={formatPrice}
+          <div className="mt-4">
+            <GeneralSection
+              issueDate={values.issueDate || ''}
+              dueInDays={dueInDays}
+              dueDate={values.dueDate || ''}
+              onChangeDueInDays={(n) => setDueInDays(n)}
+              onChangeIssueDate={(d) => handleChange('issueDate', d)}
+              customerId={values.customerId}
+              branchId={values.branchId}
+              branchName={values.branchName}
+              showBranchSelector={showBranchSelector}
+              setShowBranchSelector={(v) => {
+                setShowBranchSelector(v)
+                if (!v) setValues(prev => ({ ...prev, branchId: undefined, branchName: '' }))
+              }}
+              branches={branches}
+              onSelectBranch={(branchId, branchName) => setValues(prev => ({ ...prev, branchId, branchName }))}
+            />
+          </div>
+        </div>
+
+        {/* Items */}
+        <div className="rounded-lg border border-slate-700 bg-slate-900/50 p-6">
+          <h3 className="mb-4 text-lg font-semibold text-slate-200">📦 Items</h3>
+
+          {/* Productos / Ítems */}
+          <ItemsSection
+            productSearch={productSearch}
+            setProductSearch={setProductSearch}
+            productSearchRef={productSearchRef}
+            products={products}
+            onOpenCreateProduct={() => setOpenProductModal(true)}
+            onAddFromProduct={(p) => addItemFromProduct(p)}
+            onUpdateItem={(i, patch) => updateItem(i, patch)}
+            onRemoveItem={(i) => removeItem(i)}
+            onReorderItems={(from, to) => reorderItems(from, to)}
+            items={values.items ?? []}
+            formatPrice={formatPrice}
+          />
+
+          {/* Servicios Adicionales dentro de Items */}
+          <div className="mt-6">
+            <ChargesChips
+              charges={(values.additionalCharges ?? []).map(c => ({ type: c.type, amount: c.amount }))}
+              onAdd={(t) => addCharge(t)}
+              onUpdate={(t, amount) => upsertCharge(t, amount)}
+              onRemove={(t) => removeCharge(t)}
+            />
+          </div>
+
+
+        </div>
+
+        {/* Panel de resumen y notas: inline en mobile (<lg), flotante en desktop (lg) */}
+        <QuoteSidebar
+          totals={{ subtotal: totals.subtotal, tax: totals.tax, charges: totals.charges, total: totals.total }}
+          chargeDetails={chargeDetails}
+          notes={values.notes ?? ''}
+          onNotesChange={(v) => handleChange('notes', v)}
+          printNotes={values.printNotes ?? true}
+          onPrintNotesChange={(v) => handleChange('printNotes', v)}
+          canSubmit={canSubmit}
+          pending={pending}
+          onSubmit={handleSubmitFromSidebar}
         />
 
-        {/* Servicios Adicionales dentro de Items */}
-        <div className="mt-6">
-          <ChargesChips
-            charges={(values.additionalCharges ?? []).map(c => ({ type: c.type, amount: c.amount }))}
-            onAdd={(t) => addCharge(t)}
-            onUpdate={(t, amount) => upsertCharge(t, amount)}
-            onRemove={(t) => removeCharge(t)}
-          />
-        </div>
 
+        {/* Mobile sticky totals + action */}
+        <MobileActionBar>
+          <div className="flex items-center justify-between w-full gap-3">
+            <div className="flex flex-col text-left">
+              <span className="text-[11px] text-slate-400">Total</span>
+              <span className="text-base font-semibold">{new Intl.NumberFormat('es-PY', { maximumFractionDigits: 0 }).format(totals.total)}</span>
+            </div>
+            <button
+              type="submit"
+              className="flex-1 rounded bg-blue-600 px-4 py-3 text-white font-medium hover:bg-blue-500 disabled:opacity-60"
+              disabled={!canSubmit || !!pending}
+            >
+              {pending ? 'Guardando…' : 'Guardar presupuesto'}
+            </button>
+          </div>
+        </MobileActionBar>
+      </form>
 
-      </div>
-
-      {/* Panel de resumen y notas: inline en mobile (<lg), flotante en desktop (lg) */}
-      <QuoteSidebar
-        totals={{ subtotal: totals.subtotal, tax: totals.tax, charges: totals.charges, total: totals.total }}
-        chargeDetails={chargeDetails}
-        notes={values.notes ?? ''}
-        onNotesChange={(v) => handleChange('notes', v)}
-        printNotes={values.printNotes ?? true}
-        onPrintNotesChange={(v) => handleChange('printNotes', v)}
-        canSubmit={canSubmit}
-        pending={pending}
-        onSubmit={handleSubmitFromSidebar}
+      {/* Modal Crear Cliente */}
+      <ClientCreateModal
+        open={isClientModalOpen}
+        onClose={() => closeClientModal()}
+        onSuccess={(c) => {
+          handleChange('customerId', c.id)
+          handleChange('customerName', c.name)
+          // Resetear sucursal al cambiar de cliente
+          handleChange('branchId', undefined)
+          handleChange('branchName', '')
+          closeClientModal()
+          setClientSearch('')
+          success('Cliente creado')
+        }}
       />
 
-      
-      {/* Mobile sticky totals + action */}
-      <MobileActionBar>
-        <div className="flex items-center justify-between w-full gap-3">
-          <div className="flex flex-col text-left">
-            <span className="text-[11px] text-slate-400">Total</span>
-            <span className="text-base font-semibold">{new Intl.NumberFormat('es-PY', { maximumFractionDigits: 0 }).format(totals.total)}</span>
-          </div>
-          <button
-            type="submit"
-            className="flex-1 rounded bg-blue-600 px-4 py-3 text-white font-medium hover:bg-blue-500 disabled:opacity-60"
-            disabled={!canSubmit || !!pending}
-          >
-            {pending ? 'Guardando…' : 'Guardar presupuesto'}
-          </button>
-        </div>
-      </MobileActionBar>
-    </form>
-
-    {/* Modal Crear Cliente */}
-    <ClientCreateModal
-      open={isClientModalOpen}
-      onClose={() => closeClientModal()}
-      onSuccess={(c) => {
-        handleChange('customerId', c.id)
-        handleChange('customerName', c.name)
-        // Resetear sucursal al cambiar de cliente
-        handleChange('branchId', undefined)
-        handleChange('branchName', '')
-        closeClientModal()
-        setClientSearch('')
-        success('Cliente creado')
-      }}
-    />
-
-    {/* Modal Producto unificado (modo crear) */}
-    <ProductModal
-      mode="create"
-      open={openProductModal}
-      onClose={() => setOpenProductModal(false)}
-      onSuccess={(_, p) => {
-        addItemFromProduct({ id: p.id, name: p.name, price: p.price, taxRate: p.taxRate })
-        setOpenProductModal(false)
-        setProductSearch('')
-        success('Producto creado')
-      }}
-    />
+      {/* Modal Producto unificado (modo crear) */}
+      <ProductModal
+        mode="create"
+        open={openProductModal}
+        onClose={() => setOpenProductModal(false)}
+        onSuccess={(_, p) => {
+          addItemFromProduct({ id: p.id, name: p.name, price: p.price, taxRate: p.taxRate })
+          setOpenProductModal(false)
+          setProductSearch('')
+          success('Producto creado')
+        }}
+      />
     </>
   )
 }

@@ -218,6 +218,7 @@ export function ProductForm(props: ProductFormProps): JSX.Element {
                   <option value="KG">Kilogramo (KG)</option>
                   <option value="LT">Litro (LT)</option>
                   <option value="M">Metro (M)</option>
+                  <option value="ML">Metros Lineal (ML)</option>
                   <option value="M2">Metro cuadrado (M²)</option>
                   <option value="M3">Metro cúbico (M³)</option>
                 </select>
