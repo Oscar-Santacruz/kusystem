@@ -138,7 +138,7 @@ export const QuotePrint = forwardRef<HTMLDivElement, QuotePrintProps>(function Q
           />
         </div>
         <div className="text-right">
-          <div className="no-print-shadow text-4xl font-black tracking-wide text-black" style={{textShadow: '0 1px 0 #bbb, 0 2px 0 #aaa, 0 3px 0 #999, 0 4px 0 #888, 0 5px 0 #777'}}>
+          <div className="no-print-shadow text-4xl font-black tracking-wide text-black" style={{ textShadow: '0 1px 0 #bbb, 0 2px 0 #aaa, 0 3px 0 #999, 0 4px 0 #888, 0 5px 0 #777' }}>
             PRESUPUESTO
           </div>
           <div className="mt-2 text-2xl font-bold">N° {data.number ? String(data.number).padStart(4, '0') : data.id.slice(0, 6)}</div>
@@ -160,7 +160,7 @@ export const QuotePrint = forwardRef<HTMLDivElement, QuotePrintProps>(function Q
       {/* Cliente */}
       <div className="mt-6 grid grid-cols-2 gap-4">
         <div>
-          <div className="text-lg font-semibold text-black" style={{textShadow: '0 1px 0 #d1d5db'}}>Señores:</div>
+          <div className="text-lg font-semibold text-black" style={{ textShadow: '0 1px 0 #d1d5db' }}>Señores:</div>
           <div className="text-2xl font-extrabold text-black">
             {data.customerName}
           </div>
@@ -209,15 +209,15 @@ export const QuotePrint = forwardRef<HTMLDivElement, QuotePrintProps>(function Q
             })}
             {data.items.length < 4
               ? Array.from({ length: 4 - data.items.length }).map((_, i) => (
-                  <tr key={`empty-${i}`}>
-                    <td className="w-14 border border-[#cbd5e1] px-2 py-6 align-top">&nbsp;</td>
-                    <td className="border border-[#cbd5e1] px-2 py-6 align-top">&nbsp;</td>
-                    <td className="w-16 border border-[#cbd5e1] px-2 py-6" />
-                    <td className="w-20 border border-[#cbd5e1] px-2 py-6" />
-                    <td className="w-28 border border-[#cbd5e1] px-2 py-6" />
-                    <td className="w-28 border border-[#cbd5e1] px-2 py-6" />
-                  </tr>
-                ))
+                <tr key={`empty-${i}`}>
+                  <td className="w-14 border border-[#cbd5e1] px-2 py-6 align-top">&nbsp;</td>
+                  <td className="border border-[#cbd5e1] px-2 py-6 align-top">&nbsp;</td>
+                  <td className="w-16 border border-[#cbd5e1] px-2 py-6" />
+                  <td className="w-20 border border-[#cbd5e1] px-2 py-6" />
+                  <td className="w-28 border border-[#cbd5e1] px-2 py-6" />
+                  <td className="w-28 border border-[#cbd5e1] px-2 py-6" />
+                </tr>
+              ))
               : null}
           </tbody>
         </table>
@@ -240,16 +240,16 @@ export const QuotePrint = forwardRef<HTMLDivElement, QuotePrintProps>(function Q
               <span>SUB-TOTAL</span>
               <span>{formatCurrency0(computed.subtotal, data.currency)}</span>
             </div>
-            <div className="flex justify-between border-b border-[#cbd5e1] py-1">
-              <span>IVA</span>
-              <span>{formatCurrency0(computed.tax, data.currency)}</span>
-            </div>
             {computed.chargesList.map((c, idx) => (
               <div key={idx} className="flex justify-between border-b border-[#cbd5e1] py-1">
                 <span>{chargeLabel((c as any).type)}</span>
                 <span>{formatCurrency0((c as any).amount ?? 0, data.currency)}</span>
               </div>
             ))}
+            <div className="flex justify-between border-b border-[#cbd5e1] py-1">
+              <span>IVA</span>
+              <span>{formatCurrency0(computed.tax, data.currency)}</span>
+            </div>
             {computed.discount ? (
               <div className="flex justify-between border-b border-[#cbd5e1] py-1">
                 <span>DESCUENTO</span>
