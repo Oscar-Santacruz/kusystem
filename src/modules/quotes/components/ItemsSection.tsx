@@ -106,7 +106,7 @@ export function ItemsSection(props: ItemsSectionProps): JSX.Element {
             <tr>
               <th className="border border-slate-800 px-2 py-2 text-center w-8" title="Arrastra para reordenar" aria-label="Handle" />
               <th className="border border-slate-800 px-3 py-2 text-left w-2/5">Descripción</th>
-              <th className="border border-slate-800 px-3 py-2 text-right w-20">Cantidad</th>
+              <th className="border border-slate-800 px-3 py-2 text-right w-24">Cantidad</th>
               <th className="border border-slate-800 px-3 py-2 text-right w-28">P. Unit</th>
               <th className="border border-slate-800 px-3 py-2 text-right w-28">Total</th>
               <th className="border border-slate-800 px-3 py-2 text-center w-16">Acción</th>

@@ -40,7 +40,7 @@ function formatCurrencyPlain0(n?: number): string {
 
 function formatQty0(n?: number): string {
   if (n == null) return '-'
-  return new Intl.NumberFormat('es-PY', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
+  return new Intl.NumberFormat('es-PY', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n)
 }
 
 function parseLocalDate(value?: string | number | Date): Date {

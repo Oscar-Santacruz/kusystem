@@ -105,6 +105,11 @@ export function QuoteDetailPage(): JSX.Element {
     return fmt.format(Number.isFinite(n as number) ? (n as number) : 0)
   }
 
+  const qtFmt = useMemo(() => new Intl.NumberFormat('es-PY', { useGrouping: true, minimumFractionDigits: 0, maximumFractionDigits: 2 }), [])
+  function formatQty(n?: number): string {
+    return qtFmt.format(Number.isFinite(n as number) ? (n as number) : 0)
+  }
+
   function parseLocalDate(value?: string | number | Date): Date {
     if (value == null) return new Date()
     if (value instanceof Date) return value
@@ -346,7 +351,7 @@ export function QuoteDetailPage(): JSX.Element {
                       <tr key={idx} className="border-t border-slate-700/60">
                         <td className="px-2 py-2 align-top">{idx + 1}</td>
                         <td className="px-2 py-2 align-top">{it.description}</td>
-                        <td className="px-2 py-2 align-top text-right">{formatPYG(it.quantity)}</td>
+                        <td className="px-2 py-2 align-top text-right">{formatQty(it.quantity)}</td>
                         <td className="px-2 py-2 align-top text-right">{formatPYG(it.unitPrice)}</td>
                         <td className="px-2 py-2 align-top text-right">{formatPYG(it.discount ?? 0)}</td>
                         <td className="px-2 py-2 align-top text-right">{ivaPct}%</td>

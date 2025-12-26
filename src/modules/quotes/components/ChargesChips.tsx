@@ -1,5 +1,6 @@
 import { type JSX } from 'react'
 import { AdditionalChargeTypes, type AdditionalChargeType } from '@/modules/quotes/types'
+import { NumericFormat } from 'react-number-format'
 
 export interface ChargeItem {
   type: AdditionalChargeType
@@ -78,13 +79,14 @@ export function ChargesChips({ charges, onAdd, onUpdate, onRemove }: ChargesChip
                 {chargeIcons[c.type]}
                 <span className="text-sm">{labelFromType(c.type)}</span>
               </div>
-              <input
-                type="number"
-                min={0}
-                step={1}
+              <NumericFormat
                 className="w-28 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-right text-white outline-none"
                 value={c.amount ?? 0}
-                onChange={(e) => onUpdate(c.type, Number(e.target.value))}
+                thousandSeparator="."
+                decimalSeparator=","
+                decimalScale={0}
+                allowNegative={false}
+                onValueChange={(values: { floatValue?: number }) => onUpdate(c.type, values.floatValue ?? 0)}
               />
               <button
                 type="button"
