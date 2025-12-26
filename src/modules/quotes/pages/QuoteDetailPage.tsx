@@ -4,7 +4,7 @@ import { useQuote } from '@/modules/quotes/hooks/useQuotes'
 import { QuotePrint } from '@/modules/quotes/components/QuotePrint'
 import { QuoteStatusActions } from '@/modules/quotes/components/QuoteStatusActions'
 import { useReactToPrint } from 'react-to-print'
-import { FaEdit, FaPrint, FaFilePdf, FaImage, FaWhatsapp, FaArrowLeft, FaLink } from 'react-icons/fa'
+import { FaEdit, FaPrint, FaFilePdf, FaImage, FaWhatsapp, FaArrowLeft, FaLink, FaCopy } from 'react-icons/fa'
 import { getPublicQuoteUrl } from '@/modules/quotes/utils/public-url'
 import { toast } from 'sonner'
 import { useCurrentOrganization } from '@/shared/hooks/useCurrentOrganization'
@@ -198,6 +198,16 @@ export function QuoteDetailPage(): JSX.Element {
             <span className="sr-only">Editar</span>
           </Link>
 
+          <Link
+            to={`/main/quotes/new?cloneId=${id}`}
+            className="inline-flex items-center justify-center rounded bg-indigo-700 text-white hover:bg-indigo-600 h-9 w-9"
+            aria-label="Clonar"
+            title="Clonar"
+          >
+            <FaCopy className="h-4 w-4" aria-hidden="true" />
+            <span className="sr-only">Clonar Presupuesto</span>
+          </Link>
+
           <button
             className="inline-flex items-center justify-center rounded bg-slate-900 text-white hover:bg-slate-800 h-9 w-9"
             onClick={handlePrint}
@@ -275,9 +285,9 @@ export function QuoteDetailPage(): JSX.Element {
       ) : data ? (
         <div className="space-y-6">
           {/* Acciones de estado */}
-          <QuoteStatusActions 
-            quoteId={id!} 
-            currentStatus={data.status} 
+          <QuoteStatusActions
+            quoteId={id!}
+            currentStatus={data.status}
             onStatusChanged={() => refetch()}
           />
 
