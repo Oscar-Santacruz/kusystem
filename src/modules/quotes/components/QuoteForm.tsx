@@ -249,10 +249,11 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
     setValues((prev) => ({ ...prev, [key]: val }))
   }
 
-  function addItemFromProduct(p: { id: string; name: string; price: number; taxRate?: number }) {
+  function addItemFromProduct(p: { id: string; name: string; price: number; taxRate?: number; unit?: string }) {
     const newItem: QuoteItem = {
       productId: p.id,
       description: p.name,
+      unit: p.unit,
       quantity: 1,
       unitPrice: p.price,
       taxRate: normalizeTaxRate(p.taxRate ?? 0),
