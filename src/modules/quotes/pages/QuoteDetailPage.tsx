@@ -337,6 +337,7 @@ export function QuoteDetailPage(): JSX.Element {
                     <th className="px-2 py-2 text-left">#</th>
                     <th className="px-2 py-2 text-left">Descripción</th>
                     <th className="px-2 py-2 text-right">Cantidad</th>
+                    <th className="px-2 py-2 text-center">U.M.</th>
                     <th className="px-2 py-2 text-right">P. unitario</th>
                     <th className="px-2 py-2 text-right">Desc.</th>
                     <th className="px-2 py-2 text-right">IVA</th>
@@ -352,6 +353,7 @@ export function QuoteDetailPage(): JSX.Element {
                         <td className="px-2 py-2 align-top">{idx + 1}</td>
                         <td className="px-2 py-2 align-top">{it.description}</td>
                         <td className="px-2 py-2 align-top text-right">{formatQty(it.quantity)}</td>
+                        <td className="px-2 py-2 align-top text-center">{it.unit || 'UN'}</td>
                         <td className="px-2 py-2 align-top text-right">{formatPYG(it.unitPrice)}</td>
                         <td className="px-2 py-2 align-top text-right">{formatPYG(it.discount ?? 0)}</td>
                         <td className="px-2 py-2 align-top text-right">{ivaPct}%</td>

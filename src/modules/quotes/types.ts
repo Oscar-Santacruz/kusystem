@@ -2,6 +2,7 @@ export interface QuoteItem {
   id?: string
   productId?: string
   description: string
+  unit?: string
   quantity: number
   unitPrice: number
   discount?: number
@@ -66,7 +67,7 @@ export interface CreateQuoteInput {
   additionalCharges?: AdditionalCharge[]
 }
 
-export interface UpdateQuoteInput extends Partial<CreateQuoteInput> {}
+export interface UpdateQuoteInput extends Partial<CreateQuoteInput> { }
 
 export interface Paginated<T> {
   data: T[]

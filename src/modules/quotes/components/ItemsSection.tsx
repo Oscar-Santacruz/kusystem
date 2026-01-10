@@ -13,7 +13,7 @@ export interface ItemsSectionProps {
   }
   // Actions
   onOpenCreateProduct: () => void
-  onAddFromProduct: (p: { id: string; name: string; price: number; taxRate?: number | undefined }) => void
+  onAddFromProduct: (p: { id: string; name: string; price: number; taxRate?: number | undefined; unit?: string }) => void
   onUpdateItem: (index: number, patch: Partial<QuoteItem>) => void
   onRemoveItem: (index: number) => void
   // Reorder (DnD)
@@ -70,7 +70,7 @@ export function ItemsSection(props: ItemsSectionProps): JSX.Element {
                 <button
                   key={p.id}
                   type="button"
-                  onClick={() => onAddFromProduct({ id: p.id, name: p.name, price: p.price, taxRate: p.taxRate ?? undefined })}
+                  onClick={() => onAddFromProduct({ id: p.id, name: p.name, price: p.price, taxRate: p.taxRate ?? undefined, unit: (p as any).unit })}
                   className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-slate-800 focus:bg-slate-800 text-slate-200"
                 >
                   <div className="min-w-0 flex-1">
