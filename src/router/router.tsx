@@ -15,6 +15,7 @@ import { InvitationAcceptPage } from '@/pages/invitations/invitation-accept-page
 import { InviteMembersPage } from '@/pages/organizations/invite-members-page'
 import { MembersPage } from '@/pages/organizations/members-page'
 import { PermissionsPage } from '@/pages/organizations/permissions-page'
+import { LogoutPage } from '@/pages/logout-page'
 
 // Lazy-load páginas pesadas para reducir el bundle principal (mapear named export -> default)
 const QuotePublicPage = lazy(() => import('@/modules/quotes/pages/QuotePublicPage').then(m => ({ default: m.QuotePublicPage })))
@@ -27,19 +28,24 @@ export const router = createBrowserRouter([
     errorElement: <h1>404 - Página no encontrada</h1>,
     children: [
       { path: 'login', element: <LoginPage /> },
+      { path: 'logout', element: <LogoutPage /> },
       { path: 'callback', element: <AuthCallback /> },
       // Ruta pública para ver presupuesto por publicId (sin auth)
-      { path: 'q/:publicId', element: (
-        <Suspense fallback={<div className="p-6">Cargando…</div>}>
-          <QuotePublicPage />
-        </Suspense>
-      ) },
+      {
+        path: 'q/:publicId', element: (
+          <Suspense fallback={<div className="p-6">Cargando…</div>}>
+            <QuotePublicPage />
+          </Suspense>
+        )
+      },
       // Ruta de preview de impresión por ID interno (sin auth) para desarrollo
-      { path: 'preview/quotes/:id', element: (
-        <Suspense fallback={<div className="p-6">Cargando…</div>}>
-          <QuotePreviewPage />
-        </Suspense>
-      ) },
+      {
+        path: 'preview/quotes/:id', element: (
+          <Suspense fallback={<div className="p-6">Cargando…</div>}>
+            <QuotePreviewPage />
+          </Suspense>
+        )
+      },
       // Onboarding y flujos públicos de invitación
       { path: 'onboarding', element: <OnboardingPage /> },
       { path: 'organizations/create', element: <CreateOrganizationPage /> },
