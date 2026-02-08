@@ -5,8 +5,9 @@ import { formatCurrency } from '@/shared/utils/format'
 import { MobileActionBar } from '@/shared/ui/mobile-action-bar'
 import { ImageUploader } from '@/shared/ui/image-uploader'
 import { getProductImageUploadUrl } from '@/services/files'
+import { useProductTemplates } from '../hooks/useProducts'
 
-export interface ProductFormValues extends CreateProductInput {}
+export interface ProductFormValues extends CreateProductInput { }
 
 export interface ProductFormProps {
   initialValues?: ProductFormValues
@@ -33,7 +34,9 @@ const DEFAULTS: ProductFormValues = {
   stock: 0,
   minStock: 0,
   barcode: '',
-  imageUrl: ''
+  imageUrl: '',
+  templateId: null,
+  metadata: {}
 }
 
 export function ProductForm(props: ProductFormProps): JSX.Element {
@@ -41,11 +44,17 @@ export function ProductForm(props: ProductFormProps): JSX.Element {
   const [values, setValues] = useState<ProductFormValues>(initialValues ?? DEFAULTS)
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormValues, string>>>({})
   const uid = useId()
-  
+
+  const { data: templates } = useProductTemplates()
+  const selectedTemplate = useMemo(() =>
+    templates?.find(t => t.id === values.templateId),
+    [templates, values.templateId]
+  )
+
   // Generar un ID temporal para el upload de imagen (antes de crear el producto)
   const tempProductId = useMemo(() => `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`, [])
   const uploadUrl = useMemo(() => getProductImageUploadUrl(tempProductId), [tempProductId])
-  
+
   // URL completa para vista previa de la imagen
   const imagePreviewUrl = useMemo(() => {
     if (!values.imageUrl) return null
@@ -72,7 +81,9 @@ export function ProductForm(props: ProductFormProps): JSX.Element {
     stock: z.number().min(0, 'Stock inválido'),
     minStock: z.number().min(0, 'Stock mínimo inválido'),
     barcode: z.string().optional(),
-    imageUrl: z.string().optional()
+    imageUrl: z.string().optional(),
+    templateId: z.string().nullable().optional(),
+    metadata: z.record(z.string(), z.any()).optional()
   })
 
   useEffect(() => {
@@ -88,6 +99,20 @@ export function ProductForm(props: ProductFormProps): JSX.Element {
   function handleChange<K extends keyof ProductFormValues>(key: K, val: ProductFormValues[K]) {
     setValues((prev) => {
       const next = { ...prev, [key]: val }
+      props.onChange?.(next)
+      return next
+    })
+  }
+
+  function handleMetadataChange(key: string, val: any) {
+    setValues((prev) => {
+      const next = {
+        ...prev,
+        metadata: {
+          ...prev.metadata,
+          [key]: val
+        }
+      }
       props.onChange?.(next)
       return next
     })
@@ -143,7 +168,32 @@ export function ProductForm(props: ProductFormProps): JSX.Element {
             <span className="text-blue-600">📦</span>
             <h3 className="font-medium text-slate-700">Información Básica</h3>
           </div>
+
           <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1" htmlFor={`${uid}-template`}>
+                Tipo de Producto
+              </label>
+              <select
+                id={`${uid}-template`}
+                className="w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                value={values.templateId || ''}
+                onChange={(e) => {
+                  const tid = e.target.value || null
+                  handleChange('templateId', tid)
+                  // Reset metadata if template changes? Maybe safer to keep it or confirm.
+                  if (!tid) handleChange('metadata', {})
+                }}
+                disabled={pending}
+              >
+                <option value="">Estándar</option>
+                {templates?.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-500 mt-1">Selecciona una plantilla para habilitar campos específicos (ej. Vehículo).</p>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1" htmlFor={`${uid}-name`}>
                 Nombre del producto <span className="text-red-500">*</span>
@@ -367,6 +417,48 @@ export function ProductForm(props: ProductFormProps): JSX.Element {
           </div>
         </div>
 
+        {/* Dynamic Fields Section */}
+        {selectedTemplate && (
+          <div className="space-y-4 border rounded-lg p-4 bg-slate-50 border-blue-200">
+            <div className="flex items-center gap-2">
+              <span className="text-blue-600">✨</span>
+              <h3 className="font-medium text-slate-700">Detalles de {selectedTemplate.name}</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Object.entries(selectedTemplate.attributes).map(([key, attr]) => (
+                <div key={key} className={attr.type === 'text' && !attr.options ? 'md:col-span-2' : ''}>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    {attr.label} {attr.required && <span className="text-red-500">*</span>}
+                  </label>
+                  {attr.type === 'select' && attr.options ? (
+                    <select
+                      className="w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      value={values.metadata?.[key] || ''}
+                      onChange={(e) => handleMetadataChange(key, e.target.value)}
+                      disabled={pending}
+                      required={attr.required}
+                    >
+                      <option value="">Seleccionar...</option>
+                      {attr.options.map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type={attr.type === 'number' ? 'number' : attr.type === 'date' ? 'date' : 'text'}
+                      className="w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      value={values.metadata?.[key] || ''}
+                      onChange={(e) => handleMetadataChange(key, e.target.value)}
+                      disabled={pending}
+                      required={attr.required}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Image Section */}
         <div className="space-y-4 border rounded-lg p-4">
           <div className="flex items-center gap-2">
@@ -397,42 +489,42 @@ export function ProductForm(props: ProductFormProps): JSX.Element {
             <span className="text-blue-600">🧮</span>
             <h3 className="font-medium text-slate-800">Resumen de Precios</h3>
           </div>
-          
+
           <div className="space-y-3">
             <div className="flex justify-between">
               <span className="text-sm text-slate-600">{priceIncludesTax ? 'Precio bruto (con IVA):' : 'Precio de venta:'}</span>
               <span className="font-medium">{formatCurrency(values.price)}</span>
             </div>
-            
+
             <div className="flex justify-between">
               <span className="text-sm text-slate-600">IVA ({Math.round((values.taxRate || 0) * 100)}%):</span>
               <span className="font-medium">{formatCurrency(taxAmount)}</span>
             </div>
-            
+
             <div className="border-t border-slate-200 my-2"></div>
-            
+
             <div className="flex justify-between font-semibold">
               <span>Total:</span>
               <span className="text-blue-600">{formatCurrency(total)}</span>
             </div>
-            
+
             <div className="border-t border-slate-200 my-2"></div>
-            
+
             <div className="flex justify-between">
               <span className="text-sm text-slate-600">Costo:</span>
               <span className="text-sm">{formatCurrency(values.cost || 0)}</span>
             </div>
-            
+
             <div className="flex justify-between">
               <span className="text-sm text-slate-600">Ganancia:</span>
               <span className="text-sm">{formatCurrency(profit)}</span>
             </div>
-            
+
             <div className="flex justify-between">
               <span className="text-sm text-slate-600">Margen de ganancia:</span>
               <span className="text-sm">{profitMargin.toFixed(2)}%</span>
             </div>
-            <div className={`mt-3 rounded-md border ${priceIncludesTax ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600'} p-3 text-xs` }>
+            <div className={`mt-3 rounded-md border ${priceIncludesTax ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600'} p-3 text-xs`}>
               {priceIncludesTax ? (
                 <p>Precio incluye IVA: Sí. El valor ingresado ya contiene el impuesto, se desglosa automáticamente.</p>
               ) : (

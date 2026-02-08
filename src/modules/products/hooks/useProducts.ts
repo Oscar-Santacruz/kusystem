@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData, type UseQueryOptions } from '@tanstack/react-query'
 import { ApiInstance } from '@/services/api'
 import type { Paginated } from '@/shared/types/api'
-import type { Product, CreateProductInput, UpdateProductInput } from '@/shared/types/domain'
+import type { Product, CreateProductInput, UpdateProductInput, ProductTemplate } from '@/shared/types/domain'
 
 const BASE = '/products'
 
@@ -83,5 +83,16 @@ export function useDeleteProduct() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: keys.all })
     },
+  })
+}
+
+export function useProductTemplates() {
+  return useQuery({
+    queryKey: ['product-templates'],
+    queryFn: async () => {
+      const data = await ApiInstance.get<{ data: ProductTemplate[] }>('/product-templates')
+      return data.data
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutos
   })
 }
