@@ -17,6 +17,9 @@ import { ItemsSection } from '@/modules/quotes/components/ItemsSection'
 import { GeneralSection } from '@/modules/quotes/components/GeneralSection'
 import { ClientSelector } from '@/modules/quotes/components/ClientSelector'
 import { MobileActionBar } from '@/shared/ui/mobile-action-bar'
+import { ApiInstance } from '@/services/api'
+import type { Product } from '@/shared/types/domain'
+
 
 export interface QuoteFormValues extends CreateQuoteInput { }
 
@@ -112,6 +115,9 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
   }
   const [openProductModal, setOpenProductModal] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [genericProductId, setGenericProductId] = useState<string | undefined>(undefined)
+  const [genericProductError, setGenericProductError] = useState<string | null>(null)
+  const [isLoadingGeneric, setIsLoadingGeneric] = useState(false)
   const dClientSearch = useDebouncedValue(clientSearch, 400)
   const dProductSearch = useDebouncedValue(productSearch, 400)
   const clients = useClients({ page: 1, pageSize: 20, search: dClientSearch })
@@ -179,6 +185,36 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
     // fallback: redondear al más cercano entre 0, 0.05, 0.1
     const candidates = [0, 0.05, 0.1]
     return candidates.reduce((best, cur) => Math.abs(cur - r) < Math.abs(best - r) ? cur : best, 0)
+  }
+
+  // Cargar producto genérico al montar el componente
+  useEffect(() => {
+    loadGenericProduct()
+  }, [])
+
+  async function loadGenericProduct() {
+    setIsLoadingGeneric(true)
+    setGenericProductError(null)
+    try {
+      const product = await ApiInstance.get<Product>('/products/generic')
+      if (product && product.id) {
+        setGenericProductId(product.id)
+      } else {
+        console.error('Generic product response missing ID', product)
+        setGenericProductError('Respuesta inválida del servidor')
+      }
+    } catch (error) {
+      console.error('Error loading generic product:', error)
+      const msg = error instanceof Error ? error.message : 'Error de conexión'
+      // Si es 401, es probable que no haya sesión, no mostramos error rojo gigante, solo log
+      if (msg.includes('401')) {
+        console.warn('Usuario no autenticado al cargar producto genérico (esperado si no hay sesión)')
+      } else {
+        setGenericProductError(msg)
+      }
+    } finally {
+      setIsLoadingGeneric(false)
+    }
   }
 
   useEffect(() => {
@@ -257,6 +293,22 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
       quantity: 1,
       unitPrice: p.price,
       taxRate: normalizeTaxRate(p.taxRate ?? 0),
+    }
+    setValues((prev) => ({ ...prev, items: [...(prev.items ?? []), newItem] }))
+  }
+
+  function addCustomItem() {
+    if (!genericProductId) {
+      console.error('Generic product not loaded yet')
+      return
+    }
+    const newItem: QuoteItem = {
+      productId: genericProductId,
+      description: '',
+      unit: 'UN',
+      quantity: 1,
+      unitPrice: 0,
+      taxRate: 0.1, // 10% IVA por defecto
     }
     setValues((prev) => ({ ...prev, items: [...(prev.items ?? []), newItem] }))
   }
@@ -385,6 +437,19 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
           <h3 className="mb-4 text-lg font-semibold text-slate-200">📦 Items</h3>
 
           {/* Productos / Ítems */}
+          {genericProductError && (
+            <div className="mb-4 rounded border border-red-700 bg-red-950 px-3 py-2 text-red-200 flex items-center justify-between">
+              <span>⚠️ {genericProductError}</span>
+              <button
+                type="button"
+                onClick={loadGenericProduct}
+                disabled={isLoadingGeneric}
+                className="ml-4 underline hover:text-red-100 disabled:opacity-50"
+              >
+                {isLoadingGeneric ? 'Cargando...' : 'Reintentar'}
+              </button>
+            </div>
+          )}
           <ItemsSection
             productSearch={productSearch}
             setProductSearch={setProductSearch}
@@ -392,11 +457,13 @@ export function QuoteForm(props: QuoteFormProps): JSX.Element {
             products={products}
             onOpenCreateProduct={() => setOpenProductModal(true)}
             onAddFromProduct={(p) => addItemFromProduct(p)}
+            onAddCustomItem={() => addCustomItem()}
             onUpdateItem={(i, patch) => updateItem(i, patch)}
             onRemoveItem={(i) => removeItem(i)}
             onReorderItems={(from, to) => reorderItems(from, to)}
             items={values.items ?? []}
             formatPrice={formatPrice}
+            genericProductId={genericProductId}
           />
 
           {/* Servicios Adicionales dentro de Items */}

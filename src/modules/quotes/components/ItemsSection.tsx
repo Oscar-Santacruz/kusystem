@@ -14,6 +14,7 @@ export interface ItemsSectionProps {
   // Actions
   onOpenCreateProduct: () => void
   onAddFromProduct: (p: { id: string; name: string; price: number; taxRate?: number | undefined; unit?: string }) => void
+  onAddCustomItem: () => void
   onUpdateItem: (index: number, patch: Partial<QuoteItem>) => void
   onRemoveItem: (index: number) => void
   // Reorder (DnD)
@@ -22,6 +23,8 @@ export interface ItemsSectionProps {
   items: QuoteItem[]
   // Utils
   formatPrice: (n: number) => string
+  // Generic product ID for custom items
+  genericProductId?: string
 }
 
 export function ItemsSection(props: ItemsSectionProps): JSX.Element {
@@ -32,11 +35,13 @@ export function ItemsSection(props: ItemsSectionProps): JSX.Element {
     products,
     onOpenCreateProduct,
     onAddFromProduct,
+    onAddCustomItem,
     onUpdateItem,
     onRemoveItem,
     onReorderItems,
     items,
     formatPrice,
+    genericProductId,
   } = props
 
   return (
@@ -51,6 +56,14 @@ export function ItemsSection(props: ItemsSectionProps): JSX.Element {
             onChange={(e) => setProductSearch(e.target.value)}
             placeholder="Buscar producto (nombre, SKU o unidad)…"
           />
+          <button
+            type="button"
+            onClick={onAddCustomItem}
+            className="rounded border border-emerald-600 bg-emerald-950/30 px-3 py-2 text-emerald-300 hover:bg-emerald-950/50 whitespace-nowrap"
+            title="Agregar item con descripción y precio personalizado"
+          >
+            ➕ Item Personalizado
+          </button>
           <button type="button" onClick={onOpenCreateProduct} className="rounded border border-slate-600 px-3 py-2 text-slate-200 hover:bg-slate-800">
             Crear producto
           </button>
@@ -154,9 +167,19 @@ export function ItemsSection(props: ItemsSectionProps): JSX.Element {
                   </span>
                 </td>
                 <td className="border border-slate-800 px-3 py-2">
-                  <div className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white" title={it.description}>
-                    {it.description}
-                  </div>
+                  {it.productId === genericProductId ? (
+                    <input
+                      type="text"
+                      className="w-full rounded border border-emerald-600 bg-slate-900 px-3 py-2 text-white outline-none focus:ring focus:ring-emerald-500/30"
+                      value={it.description}
+                      onChange={(e) => onUpdateItem(idx, { description: e.target.value })}
+                      placeholder="Descripción del servicio/producto…"
+                    />
+                  ) : (
+                    <div className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white" title={it.description}>
+                      {it.description}
+                    </div>
+                  )}
                 </td>
                 <td className="border border-slate-800 px-3 py-2 text-right">
                   <input
@@ -169,9 +192,21 @@ export function ItemsSection(props: ItemsSectionProps): JSX.Element {
                   />
                 </td>
                 <td className="border border-slate-800 px-3 py-2 text-right">
-                  <div className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-right text-white" title={String(it.unitPrice ?? 0)}>
-                    {formatPrice(it.unitPrice ?? 0)}
-                  </div>
+                  {it.productId === genericProductId ? (
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      className="w-full rounded border border-emerald-600 bg-slate-900 px-3 py-2 text-right text-white outline-none focus:ring focus:ring-emerald-500/30"
+                      value={it.unitPrice ?? 0}
+                      onChange={(e) => onUpdateItem(idx, { unitPrice: Math.max(0, Number(e.target.value) || 0) })}
+                      placeholder="Precio…"
+                    />
+                  ) : (
+                    <div className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-right text-white" title={String(it.unitPrice ?? 0)}>
+                      {formatPrice(it.unitPrice ?? 0)}
+                    </div>
+                  )}
                 </td>
                 <td className="border border-slate-800 px-3 py-2 text-right font-medium">
                   {formatPrice(it.quantity * it.unitPrice)}
