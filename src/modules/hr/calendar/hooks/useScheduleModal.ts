@@ -45,12 +45,13 @@ interface UseScheduleModalResult {
   saveModal: (onSuccess?: () => void) => Promise<void>
 }
 
-const DAY_TYPE_MAP: Record<DayType, 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO'> = {
+const DAY_TYPE_MAP: Record<DayType, 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO' | 'MEDIO_DIA'> = {
   laboral: 'LABORAL',
   ausente: 'AUSENTE',
   libre: 'LIBRE',
   'no-laboral': 'NO_LABORAL',
   feriado: 'FERIADO',
+  'medio-dia': 'MEDIO_DIA',
 }
 
 export function useScheduleModal(): UseScheduleModalResult {
