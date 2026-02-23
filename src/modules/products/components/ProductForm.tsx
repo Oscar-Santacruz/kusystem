@@ -6,6 +6,7 @@ import { MobileActionBar } from '@/shared/ui/mobile-action-bar'
 import { ImageUploader } from '@/shared/ui/image-uploader'
 import { getProductImageUploadUrl } from '@/services/files'
 import { useProductTemplates } from '../hooks/useProducts'
+import type { ProductTemplate } from '@/shared/types/domain'
 
 export interface ProductFormValues extends CreateProductInput { }
 
@@ -187,7 +188,7 @@ export function ProductForm(props: ProductFormProps): JSX.Element {
                 disabled={pending}
               >
                 <option value="">Estándar</option>
-                {templates?.map(t => (
+                {templates?.map((t: ProductTemplate) => (
                   <option key={t.id} value={t.id}>{t.name}</option>
                 ))}
               </select>
@@ -425,7 +426,7 @@ export function ProductForm(props: ProductFormProps): JSX.Element {
               <h3 className="font-medium text-slate-700">Detalles de {selectedTemplate.name}</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Object.entries(selectedTemplate.attributes).map(([key, attr]) => (
+              {Object.entries(selectedTemplate.attributes || {}).map(([key, attr]: [string, any]) => (
                 <div key={key} className={attr.type === 'text' && !attr.options ? 'md:col-span-2' : ''}>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     {attr.label} {attr.required && <span className="text-red-500">*</span>}
@@ -439,7 +440,7 @@ export function ProductForm(props: ProductFormProps): JSX.Element {
                       required={attr.required}
                     >
                       <option value="">Seleccionar...</option>
-                      {attr.options.map(opt => (
+                      {attr.options.map((opt: any) => (
                         <option key={opt} value={opt}>{opt}</option>
                       ))}
                     </select>
