@@ -7,6 +7,7 @@ import { ImageUploader } from '@/shared/ui/image-uploader'
 import { getProductImageUploadUrl } from '@/services/files'
 import { useProductTemplates } from '../hooks/useProducts'
 import type { ProductTemplate } from '@/shared/types/domain'
+
 export interface ProductFormValues extends CreateProductInput { }
 
 export interface ProductFormProps {
