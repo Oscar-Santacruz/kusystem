@@ -291,6 +291,21 @@ export function MainLayout() {
                     {canViewHrCalendar ? (
                       <>
                         <NavLink
+                          to="/main/hr/employees"
+                          onClick={closeSidebarOnMobile}
+                          className={({ isActive }) => [
+                            'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
+                            isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
+                            sidebarOpen ? '' : 'md:pl-0 md:pr-0 md:justify-center md:gap-0',
+                          ].join(' ')}
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
+                          </svg>
+                          <span className={sidebarOpen ? '' : 'md:hidden'}>Personal</span>
+                        </NavLink>
+
+                        <NavLink
                           to="/main/hr/calendar"
                           onClick={closeSidebarOnMobile}
                           className={({ isActive }) => [
@@ -303,6 +318,21 @@ export function MainLayout() {
                             <path d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2h-1V0h-2v2H9V0H7v2H6zm0 2h8v2H6V4zm0 4h8v8H6V8z" />
                           </svg>
                           <span className={sidebarOpen ? '' : 'md:hidden'}>Calendario</span>
+                        </NavLink>
+
+                        <NavLink
+                          to="/main/hr/payroll"
+                          onClick={closeSidebarOnMobile}
+                          className={({ isActive }) => [
+                            'flex items-center gap-3 pl-8 pr-4 py-2 text-sm transition-colors',
+                            isActive ? 'bg-blue-600 text-white border-r-2 border-blue-400' : 'text-slate-300 hover:bg-slate-700 hover:text-white',
+                            sidebarOpen ? '' : 'md:pl-0 md:pr-0 md:justify-center md:gap-0',
+                          ].join(' ')}
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 4a2 2 0 00-2 2v1h16V5a2 2 0 00-2-2H4zm14 3H2v9a2 2 0 002 2h12a2 2 0 002-2V7z M9 13a1 1 0 11-2 0 1 1 0 012 0zm3-3a1 1 0 11-2 0 1 1 0 012 0zm3 3a1 1 0 11-2 0 1 1 0 012 0z" />
+                          </svg>
+                          <span className={sidebarOpen ? '' : 'md:hidden'}>Liquidaciones</span>
                         </NavLink>
 
                         <NavLink

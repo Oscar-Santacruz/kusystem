@@ -74,7 +74,7 @@ export function CalendarPage(): JSX.Element {
         setLoadError(null)
         const startDate = format(currentWeekStart, 'yyyy-MM-dd')
         const data = await getWeekData(startDate)
-        
+
         // Aplicar orden personalizado desde localStorage
         const savedOrder = localStorage.getItem('hr-employee-order')
         if (savedOrder) {
@@ -125,7 +125,7 @@ export function CalendarPage(): JSX.Element {
     const clockIn = schedule?.clockIn || lastClockIn
     const clockOut = schedule?.clockOut || ''
     const advance = schedule?.advance || 0
-    
+
     // Calcular horas extras automáticamente
     let overtimeHours = 0
     let showOvertime = false
@@ -137,7 +137,7 @@ export function CalendarPage(): JSX.Element {
       overtimeHours = Math.max(0, totalHours - 8)
       showOvertime = overtimeHours > 0
     }
-    
+
     setModalData({
       isOpen: true,
       employeeId,
@@ -159,7 +159,7 @@ export function CalendarPage(): JSX.Element {
 
   const validateModal = (data: typeof modalData) => {
     const errors: Record<string, string> = {}
-    
+
     if (data?.dayType === 'laboral') {
       if (!data.clockIn) errors.clockIn = 'Hora de entrada requerida'
       if (!data.clockOut) errors.clockOut = 'Hora de salida requerida'
@@ -171,11 +171,11 @@ export function CalendarPage(): JSX.Element {
         }
       }
     }
-    
+
     if ((data?.advance ?? 0) > 5000000) { // Límite de 5M Gs
       errors.advance = 'El vale supera el límite máximo (5.000.000 Gs)'
     }
-    
+
     return errors
   }
 
@@ -186,7 +186,7 @@ export function CalendarPage(): JSX.Element {
   const reloadWeekData = async () => {
     const startDate = format(currentWeekStart, 'yyyy-MM-dd')
     const data = await getWeekData(startDate)
-    
+
     // Aplicar orden personalizado desde localStorage
     const savedOrder = localStorage.getItem('hr-employee-order')
     if (savedOrder) {
@@ -211,27 +211,28 @@ export function CalendarPage(): JSX.Element {
 
   const handleSaveModal = async () => {
     if (!modalData) return
-    
+
     const errors = validateModal(modalData)
     if (Object.keys(errors).length > 0) {
       setModalData({ ...modalData, validationErrors: errors })
       return
     }
-    
+
     setModalData({ ...modalData, isSaving: true, validationErrors: {} })
-    
+
     try {
       const dateStr = format(modalData.date, 'yyyy-MM-dd')
-      
+
       // Map frontend dayType to backend DayType enum
-      const dayTypeMap: Record<DayType, 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO'> = {
+      const dayTypeMap: Record<DayType, 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO' | 'MEDIO_DIA'> = {
         'laboral': 'LABORAL',
         'ausente': 'AUSENTE',
         'libre': 'LIBRE',
         'no-laboral': 'NO_LABORAL',
         'feriado': 'FERIADO',
+        'medio-dia': 'MEDIO_DIA',
       }
-      
+
       await upsertSchedule(modalData.employeeId, dateStr, {
         clockIn: modalData.clockIn || null,
         clockOut: modalData.clockOut || null,
@@ -239,22 +240,22 @@ export function CalendarPage(): JSX.Element {
         overtimeMinutes: Math.round(modalData.overtimeHours * 60),
         advanceAmount: modalData.advance || 0,
       })
-      
+
       // Update last clock in
       if (modalData.clockIn) {
         setLastClockIn(modalData.clockIn)
       }
-      
+
       setModalData({ ...modalData, isSaving: false, saveMessage: 'Registro actualizado correctamente' })
-      
+
       // Reload week data
       await reloadWeekData()
-      
+
       // Close modal after success message
       setTimeout(() => {
         handleCloseModal()
       }, 1500)
-      
+
     } catch (error) {
       console.error('Error saving schedule:', error)
       setModalData({ ...modalData, isSaving: false, validationErrors: { general: error instanceof Error ? error.message : 'Error al guardar los datos' } })
@@ -344,10 +345,10 @@ export function CalendarPage(): JSX.Element {
 
   const updateModalField = (field: string, value: any) => {
     if (!modalData) return
-    
+
     const newData = { ...modalData, [field]: value, validationErrors: { ...modalData.validationErrors } }
     delete newData.validationErrors[field]
-    
+
     // Auto-calculate overtime when changing clock out
     if (field === 'clockOut' && newData.clockIn && newData.clockOut) {
       const [inH, inM] = newData.clockIn.split(':').map(Number)
@@ -357,7 +358,7 @@ export function CalendarPage(): JSX.Element {
       newData.overtimeHours = Math.max(0, totalHours - 8)
       newData.showOvertime = newData.overtimeHours > 0
     }
-    
+
     // Format advance amount - update display value and numeric value
     if (field === 'advance') {
       const cleanedValue = value.replace(/[^\d]/g, '')
@@ -365,7 +366,7 @@ export function CalendarPage(): JSX.Element {
       newData.advance = numericValue
       newData.advanceDisplayValue = cleanedValue ? numericValue.toLocaleString('es-PY') : ''
     }
-    
+
     setModalData(newData)
   }
 
@@ -399,14 +400,15 @@ export function CalendarPage(): JSX.Element {
 
     try {
       const dateStr = format(contextMenu.date, 'yyyy-MM-dd')
-      
+
       // Map frontend dayType to backend DayType enum
-      const dayTypeMap: Record<DayType, 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO'> = {
+      const dayTypeMap: Record<DayType, 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO' | 'MEDIO_DIA'> = {
         'laboral': 'LABORAL',
         'ausente': 'AUSENTE',
         'libre': 'LIBRE',
         'no-laboral': 'NO_LABORAL',
         'feriado': 'FERIADO',
+        'medio-dia': 'MEDIO_DIA',
       }
 
       await upsertSchedule(contextMenu.employeeId, dateStr, {
@@ -428,12 +430,13 @@ export function CalendarPage(): JSX.Element {
     const { schedule, employeeId } = contextMenu
 
     try {
-      const dayTypeMap: Record<DayType, 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO'> = {
+      const dayTypeMap: Record<DayType, 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO' | 'MEDIO_DIA'> = {
         'laboral': 'LABORAL',
         'ausente': 'AUSENTE',
         'libre': 'LIBRE',
         'no-laboral': 'NO_LABORAL',
         'feriado': 'FERIADO',
+        'medio-dia': 'MEDIO_DIA',
       }
 
       // Duplicar a todos los días de la semana
@@ -460,12 +463,13 @@ export function CalendarPage(): JSX.Element {
     const { schedule, dayIndex } = contextMenu
 
     try {
-      const dayTypeMap: Record<DayType, 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO'> = {
+      const dayTypeMap: Record<DayType, 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO' | 'MEDIO_DIA'> = {
         'laboral': 'LABORAL',
         'ausente': 'AUSENTE',
         'libre': 'LIBRE',
         'no-laboral': 'NO_LABORAL',
         'feriado': 'FERIADO',
+        'medio-dia': 'MEDIO_DIA',
       }
 
       const targetDate = DAYS[dayIndex]?.date
@@ -604,91 +608,92 @@ export function CalendarPage(): JSX.Element {
                 </div>
               </div>
             ) : (
-            <div className="min-w-full pl-10 sm:pl-12">
-              {/* Header con dias */}
-              <div className="mb-3 grid grid-cols-[80px_repeat(7,minmax(90px,1fr))] gap-1 text-[11px] sm:grid-cols-[150px_repeat(7,minmax(80px,1fr))] sm:gap-1.5 md:text-sm lg:grid-cols-[120px_repeat(7,minmax(90px,1fr))] lg:gap-2">
-                <div className="font-semibold text-gray-700">Empleado</div>
-                {DAYS.map((day, idx) => (
-                  <div key={idx} className="text-center font-medium text-gray-700">
-                    {day.label}
+              <div className="min-w-full pl-10 sm:pl-12">
+                {/* Header con dias */}
+                <div className="mb-3 grid grid-cols-[80px_repeat(7,minmax(90px,1fr))] gap-1 text-[11px] sm:grid-cols-[150px_repeat(7,minmax(80px,1fr))] sm:gap-1.5 md:text-sm lg:grid-cols-[120px_repeat(7,minmax(90px,1fr))] lg:gap-2">
+                  <div className="font-semibold text-gray-700">Empleado</div>
+                  {DAYS.map((day, idx) => (
+                    <div key={idx} className="text-center font-medium text-gray-700">
+                      {day.label}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Filas de empleados */}
+                {employees.map((employee, employeeIndex) => (
+                  <div
+                    key={employee.id}
+                    data-employee-id={employee.id}
+                    className="mb-3 transition-all duration-500 ease-in-out"
+                    style={{
+                      animation: 'fadeIn 0.3s ease-in-out'
+                    }}
+                  >
+                    <div className="grid grid-cols-[80px_repeat(7,minmax(90px,1fr))] gap-1 sm:grid-cols-[150px_repeat(7,minmax(80px,1fr))] sm:gap-1.5 lg:grid-cols-[120px_repeat(7,minmax(90px,1fr))] lg:gap-2">
+                      {/* Card del empleado con botones de reordenamiento */}
+                      <div className="flex items-start justify-start">
+                        <EmployeeCard
+                          name={employee.name}
+                          avatarUrl={employee.avatarUrl || undefined}
+                          weeklyOvertimeHours={employee.weeklyOvertimeHours}
+                          weeklyAdvances={employee.weeklyAdvances}
+                          weeklyAdvancesAmount={employee.weeklyAdvancesAmount}
+                          onMoveUp={() => handleMoveEmployeeUp(employee.id)}
+                          onMoveDown={() => handleMoveEmployeeDown(employee.id)}
+                          canMoveUp={employeeIndex > 0}
+                          canMoveDown={employeeIndex < employees.length - 1}
+                        />
+                      </div>
+
+                      {/* Celdas de dias */}
+                      {DAYS.map((dayMeta, idx) => {
+                        const schedule = employee.schedules.find(s => s.date === format(dayMeta.date, 'yyyy-MM-dd'))
+                        const dayTypeMap: Record<string, DayType> = {
+                          'LABORAL': 'laboral',
+                          'AUSENTE': 'ausente',
+                          'LIBRE': 'libre',
+                          'NO_LABORAL': 'no-laboral',
+                          'FERIADO': 'feriado',
+                          'MEDIO_DIA': 'medio-dia',
+                        }
+                        const totalAdvance = schedule?.advances.reduce((sum, adv) => sum + adv.amount, 0) || 0
+                        const overtimeHours = schedule ? Math.round(schedule.overtimeMinutes / 60 * 10) / 10 : 0
+
+                        const scheduleData: DaySchedule = {
+                          clockIn: schedule?.clockIn || undefined,
+                          clockOut: schedule?.clockOut || undefined,
+                          advance: totalAdvance,
+                          overtimeHours,
+                          dayType: schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined,
+                        }
+
+                        return (
+                          <div
+                            key={idx}
+                            onContextMenu={(e) => handleContextMenu(e, employee.id, idx, scheduleData, dayMeta.date)}
+                          >
+                            <DayCell
+                              clockIn={schedule?.clockIn || undefined}
+                              clockOut={schedule?.clockOut || undefined}
+                              advance={totalAdvance > 0 ? totalAdvance : undefined}
+                              overtimeHours={overtimeHours}
+                              dayType={schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined}
+                              date={dayMeta.date}
+                              onClick={() => handleDayCellClick(
+                                employee.id,
+                                employee.name,
+                                idx,
+                                scheduleData,
+                                dayMeta.date,
+                              )}
+                            />
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 ))}
               </div>
-
-              {/* Filas de empleados */}
-              {employees.map((employee, employeeIndex) => (
-                <div 
-                  key={employee.id} 
-                  data-employee-id={employee.id}
-                  className="mb-3 transition-all duration-500 ease-in-out"
-                  style={{
-                    animation: 'fadeIn 0.3s ease-in-out'
-                  }}
-                >
-                  <div className="grid grid-cols-[80px_repeat(7,minmax(90px,1fr))] gap-1 sm:grid-cols-[150px_repeat(7,minmax(80px,1fr))] sm:gap-1.5 lg:grid-cols-[120px_repeat(7,minmax(90px,1fr))] lg:gap-2">
-                    {/* Card del empleado con botones de reordenamiento */}
-                    <div className="flex items-start justify-start">
-                      <EmployeeCard
-                        name={employee.name}
-                        avatarUrl={employee.avatarUrl || undefined}
-                        weeklyOvertimeHours={employee.weeklyOvertimeHours}
-                        weeklyAdvances={employee.weeklyAdvances}
-                        weeklyAdvancesAmount={employee.weeklyAdvancesAmount}
-                        onMoveUp={() => handleMoveEmployeeUp(employee.id)}
-                        onMoveDown={() => handleMoveEmployeeDown(employee.id)}
-                        canMoveUp={employeeIndex > 0}
-                        canMoveDown={employeeIndex < employees.length - 1}
-                      />
-                    </div>
-
-                    {/* Celdas de dias */}
-                    {DAYS.map((dayMeta, idx) => {
-                      const schedule = employee.schedules.find(s => s.date === format(dayMeta.date, 'yyyy-MM-dd'))
-                      const dayTypeMap: Record<string, DayType> = {
-                        'LABORAL': 'laboral',
-                        'AUSENTE': 'ausente',
-                        'LIBRE': 'libre',
-                        'NO_LABORAL': 'no-laboral',
-                        'FERIADO': 'feriado',
-                      }
-                      const totalAdvance = schedule?.advances.reduce((sum, adv) => sum + adv.amount, 0) || 0
-                      const overtimeHours = schedule ? Math.round(schedule.overtimeMinutes / 60 * 10) / 10 : 0
-                      
-                      const scheduleData: DaySchedule = {
-                        clockIn: schedule?.clockIn || undefined,
-                        clockOut: schedule?.clockOut || undefined,
-                        advance: totalAdvance,
-                        overtimeHours,
-                        dayType: schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined,
-                      }
-
-                      return (
-                        <div
-                          key={idx}
-                          onContextMenu={(e) => handleContextMenu(e, employee.id, idx, scheduleData, dayMeta.date)}
-                        >
-                          <DayCell
-                            clockIn={schedule?.clockIn || undefined}
-                            clockOut={schedule?.clockOut || undefined}
-                            advance={totalAdvance > 0 ? totalAdvance : undefined}
-                            overtimeHours={overtimeHours}
-                            dayType={schedule?.dayType ? dayTypeMap[schedule.dayType] : undefined}
-                            date={dayMeta.date}
-                            onClick={() => handleDayCellClick(
-                              employee.id,
-                              employee.name,
-                              idx,
-                              scheduleData,
-                              dayMeta.date,
-                            )}
-                          />
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
             )}
           </div>
 
@@ -740,6 +745,7 @@ export function CalendarPage(): JSX.Element {
                   <div className="grid grid-cols-2 gap-3">
                     {[
                       { type: 'laboral' as DayType, label: 'Laboral', color: 'bg-green-100 text-green-800 border-green-200' },
+                      { type: 'medio-dia' as DayType, label: 'Medio Día', color: 'bg-teal-100 text-teal-800 border-teal-200' },
                       { type: 'ausente' as DayType, label: 'Ausente', color: 'bg-red-100 text-red-800 border-red-200' },
                       { type: 'libre' as DayType, label: 'Libre', color: 'bg-gray-100 text-gray-800 border-gray-200' },
                       { type: 'feriado' as DayType, label: 'Feriado', color: 'bg-purple-100 text-purple-800 border-purple-200' },
@@ -747,11 +753,10 @@ export function CalendarPage(): JSX.Element {
                       <button
                         key={type}
                         onClick={() => handleDayTypeChange(type)}
-                        className={`p-3 rounded-lg border-2 text-sm font-medium transition-colors ${
-                          modalData.dayType === type
+                        className={`p-3 rounded-lg border-2 text-sm font-medium transition-colors ${modalData.dayType === type
                             ? `${color} ring-2 ring-blue-300`
                             : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-                        }`}
+                          }`}
                       >
                         {label}
                       </button>
@@ -776,14 +781,13 @@ export function CalendarPage(): JSX.Element {
                               step="900"
                               value={modalData.clockIn}
                               onChange={(e) => updateModalField('clockIn', e.target.value)}
-                              className={`w-full rounded-lg border-2 px-3 py-2 pl-9 sm:px-4 sm:py-3 sm:pl-10 text-sm sm:text-base font-medium text-gray-900 bg-white focus:ring-2 transition-colors placeholder:text-gray-400 ${
-                                modalData.validationErrors.clockIn
+                              className={`w-full rounded-lg border-2 px-3 py-2 pl-9 sm:px-4 sm:py-3 sm:pl-10 text-sm sm:text-base font-medium text-gray-900 bg-white focus:ring-2 transition-colors placeholder:text-gray-400 ${modalData.validationErrors.clockIn
                                   ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
                                   : 'border-gray-300 focus:border-blue-600 focus:ring-blue-500'
-                              }`}
+                                }`}
                               style={{
-                                boxShadow: modalData.validationErrors.clockIn 
-                                  ? 'none' 
+                                boxShadow: modalData.validationErrors.clockIn
+                                  ? 'none'
                                   : '0 0 0 2px rgba(37, 99, 235, 0.2)'
                               }}
                             />
@@ -802,14 +806,13 @@ export function CalendarPage(): JSX.Element {
                               step="900"
                               value={modalData.clockOut}
                               onChange={(e) => updateModalField('clockOut', e.target.value)}
-                              className={`w-full rounded-lg border-2 px-3 py-2 pl-9 sm:px-4 sm:py-3 sm:pl-10 text-sm sm:text-base font-medium text-gray-900 bg-white focus:ring-2 transition-colors placeholder:text-gray-400 ${
-                                modalData.validationErrors.clockOut
+                              className={`w-full rounded-lg border-2 px-3 py-2 pl-9 sm:px-4 sm:py-3 sm:pl-10 text-sm sm:text-base font-medium text-gray-900 bg-white focus:ring-2 transition-colors placeholder:text-gray-400 ${modalData.validationErrors.clockOut
                                   ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
                                   : 'border-gray-300 focus:border-blue-600 focus:ring-blue-500'
-                              }`}
+                                }`}
                               style={{
-                                boxShadow: modalData.validationErrors.clockOut 
-                                  ? 'none' 
+                                boxShadow: modalData.validationErrors.clockOut
+                                  ? 'none'
                                   : '0 0 0 2px rgba(37, 99, 235, 0.2)'
                               }}
                             />
@@ -860,14 +863,13 @@ export function CalendarPage(): JSX.Element {
                         type="text"
                         value={modalData.advanceDisplayValue}
                         onChange={(e) => updateModalField('advance', e.target.value)}
-                        className={`w-full rounded-lg border-2 px-3 py-2 pl-9 sm:px-4 sm:py-3 sm:pl-10 text-sm sm:text-base font-medium text-gray-900 bg-white focus:ring-2 transition-colors placeholder:text-gray-400 ${
-                          modalData.validationErrors.advance
+                        className={`w-full rounded-lg border-2 px-3 py-2 pl-9 sm:px-4 sm:py-3 sm:pl-10 text-sm sm:text-base font-medium text-gray-900 bg-white focus:ring-2 transition-colors placeholder:text-gray-400 ${modalData.validationErrors.advance
                             ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
                             : 'border-gray-300 focus:border-blue-600 focus:ring-blue-500'
-                        }`}
+                          }`}
                         style={{
-                          boxShadow: modalData.validationErrors.advance 
-                            ? 'none' 
+                          boxShadow: modalData.validationErrors.advance
+                            ? 'none'
                             : '0 0 0 2px rgba(37, 99, 235, 0.2)'
                         }}
                         placeholder="0"
@@ -906,11 +908,10 @@ export function CalendarPage(): JSX.Element {
                   <button
                     onClick={handleSaveModal}
                     disabled={modalData.isSaving}
-                    className={`flex-1 rounded-lg border-2 px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors disabled:opacity-50 ${
-                      modalData.isSaving
+                    className={`flex-1 rounded-lg border-2 px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors disabled:opacity-50 ${modalData.isSaving
                         ? 'border-gray-300 bg-gray-400 text-gray-700 cursor-not-allowed'
                         : 'border-green-600 bg-green-600 text-white hover:bg-green-700 focus:ring-green-500'
-                    }`}
+                      }`}
                   >
                     {modalData.isSaving ? 'Guardando...' : 'Guardar'}
                   </button>
