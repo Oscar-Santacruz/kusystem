@@ -9,8 +9,9 @@ export interface Employee {
   phone: string | null
   avatarUrl: string | null
   department: string | null
-  monthlySalary: number | null
-  defaultShiftStart: string | null
+  salaryType: 'MONTHLY' | 'WEEKLY' | 'DAILY'
+  salaryAmount: number | null
+  isActive: boolean
   defaultShiftEnd: string | null
   weeklyOvertimeHours: number
   weeklyAdvances: number
@@ -31,7 +32,7 @@ export interface EmployeeSchedule {
   clockIn: string | null
   clockOut: string | null
   overtimeMinutes: number
-  dayType: 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO'
+  dayType: 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO' | 'MEDIO_DIA'
   notes: string | null
   advances: EmployeeAdvance[]
 }
@@ -53,7 +54,7 @@ export interface WeekData {
 export interface ScheduleUpsertInput {
   clockIn?: string | null
   clockOut?: string | null
-  dayType: 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO'
+  dayType: 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO' | 'MEDIO_DIA'
   overtimeMinutes?: number
   advanceAmount?: number | null
   notes?: string | null
@@ -86,8 +87,7 @@ export async function upsertSchedule(
   })
 }
 
-export async function initializeWeekSchedules({ startDate, clockIn, clockOut }: InitializeWeekInput): Promise<{ ok: boolean; updatedSchedules: number }>
-{
+export async function initializeWeekSchedules({ startDate, clockIn, clockOut }: InitializeWeekInput): Promise<{ ok: boolean; updatedSchedules: number }> {
   return ApiInstance.post<{ ok: boolean; updatedSchedules: number }>(`/hr/calendar/week/initialize`, {
     data: {
       startDate,
@@ -103,7 +103,7 @@ export interface ReportFilters {
   endDate: string
   employeeId?: string
   department?: string
-  dayType?: 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO'
+  dayType?: 'LABORAL' | 'AUSENTE' | 'LIBRE' | 'NO_LABORAL' | 'FERIADO' | 'MEDIO_DIA'
 }
 
 export interface ReportStats {
@@ -142,7 +142,7 @@ export async function getReportData(filters: ReportFilters): Promise<ReportData>
   const params = new URLSearchParams()
   params.append('startDate', filters.startDate)
   params.append('endDate', filters.endDate)
-  
+
   if (filters.employeeId) params.append('employeeId', filters.employeeId)
   if (filters.department && filters.department !== 'all') params.append('department', filters.department)
   if (filters.dayType) params.append('dayType', filters.dayType)

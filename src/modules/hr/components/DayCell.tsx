@@ -4,7 +4,7 @@ import { MdAccessTime } from 'react-icons/md'
 import { BiLogIn, BiLogOut } from 'react-icons/bi'
 import { PiCurrencyCircleDollarFill } from 'react-icons/pi'
 
-export type DayType = 'laboral' | 'ausente' | 'libre' | 'no-laboral' | 'feriado'
+export type DayType = 'laboral' | 'ausente' | 'libre' | 'no-laboral' | 'feriado' | 'medio-dia'
 
 export interface DayCellProps {
   /** Hora de entrada en formato HH:MM (ej: "09:00") */
@@ -30,6 +30,11 @@ const dayTypeConfig: Record<DayType, { bg: string; border: string; text: string 
     bg: 'bg-green-50',
     border: 'border-green-200',
     text: 'text-green-900',
+  },
+  'medio-dia': {
+    bg: 'bg-teal-50',
+    border: 'border-teal-200',
+    text: 'text-teal-900',
   },
   ausente: {
     bg: 'bg-[#f8d7da]',
@@ -66,7 +71,7 @@ export function DayCell(props: DayCellProps): JSX.Element {
   } = props
 
   const config = dayTypeConfig[dayType]
-  const showContent = dayType === 'laboral' && (clockIn || clockOut)
+  const showContent = (dayType === 'laboral' || dayType === 'medio-dia') && (clockIn || clockOut)
   const isToday = date ? isSameDay(date, new Date()) : false
 
   const combinedClassName = [
@@ -96,6 +101,7 @@ export function DayCell(props: DayCellProps): JSX.Element {
       ) : (
         <div className="flex h-full items-center justify-center">
           <span className="text-[10px] font-medium uppercase opacity-60">
+            {dayType === 'medio-dia' && 'Medio Día'}
             {dayType === 'ausente' && 'Ausente'}
             {dayType === 'libre' && 'Libre'}
             {dayType === 'no-laboral' && 'No Laboral'}
