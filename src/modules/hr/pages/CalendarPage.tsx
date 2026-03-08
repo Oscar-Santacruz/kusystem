@@ -634,6 +634,7 @@ export function CalendarPage(): JSX.Element {
                       <div className="flex items-start justify-start">
                         <EmployeeCard
                           name={employee.name}
+                          email={employee.email}
                           avatarUrl={employee.avatarUrl || undefined}
                           weeklyOvertimeHours={employee.weeklyOvertimeHours}
                           weeklyAdvances={employee.weeklyAdvances}
@@ -754,8 +755,8 @@ export function CalendarPage(): JSX.Element {
                         key={type}
                         onClick={() => handleDayTypeChange(type)}
                         className={`p-3 rounded-lg border-2 text-sm font-medium transition-colors ${modalData.dayType === type
-                            ? `${color} ring-2 ring-blue-300`
-                            : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                          ? `${color} ring-2 ring-blue-300`
+                          : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
                           }`}
                       >
                         {label}
@@ -782,8 +783,8 @@ export function CalendarPage(): JSX.Element {
                               value={modalData.clockIn}
                               onChange={(e) => updateModalField('clockIn', e.target.value)}
                               className={`w-full rounded-lg border-2 px-3 py-2 pl-9 sm:px-4 sm:py-3 sm:pl-10 text-sm sm:text-base font-medium text-gray-900 bg-white focus:ring-2 transition-colors placeholder:text-gray-400 ${modalData.validationErrors.clockIn
-                                  ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
-                                  : 'border-gray-300 focus:border-blue-600 focus:ring-blue-500'
+                                ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
+                                : 'border-gray-300 focus:border-blue-600 focus:ring-blue-500'
                                 }`}
                               style={{
                                 boxShadow: modalData.validationErrors.clockIn
@@ -807,8 +808,8 @@ export function CalendarPage(): JSX.Element {
                               value={modalData.clockOut}
                               onChange={(e) => updateModalField('clockOut', e.target.value)}
                               className={`w-full rounded-lg border-2 px-3 py-2 pl-9 sm:px-4 sm:py-3 sm:pl-10 text-sm sm:text-base font-medium text-gray-900 bg-white focus:ring-2 transition-colors placeholder:text-gray-400 ${modalData.validationErrors.clockOut
-                                  ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
-                                  : 'border-gray-300 focus:border-blue-600 focus:ring-blue-500'
+                                ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
+                                : 'border-gray-300 focus:border-blue-600 focus:ring-blue-500'
                                 }`}
                               style={{
                                 boxShadow: modalData.validationErrors.clockOut
@@ -864,8 +865,8 @@ export function CalendarPage(): JSX.Element {
                         value={modalData.advanceDisplayValue}
                         onChange={(e) => updateModalField('advance', e.target.value)}
                         className={`w-full rounded-lg border-2 px-3 py-2 pl-9 sm:px-4 sm:py-3 sm:pl-10 text-sm sm:text-base font-medium text-gray-900 bg-white focus:ring-2 transition-colors placeholder:text-gray-400 ${modalData.validationErrors.advance
-                            ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
-                            : 'border-gray-300 focus:border-blue-600 focus:ring-blue-500'
+                          ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
+                          : 'border-gray-300 focus:border-blue-600 focus:ring-blue-500'
                           }`}
                         style={{
                           boxShadow: modalData.validationErrors.advance
@@ -909,8 +910,8 @@ export function CalendarPage(): JSX.Element {
                     onClick={handleSaveModal}
                     disabled={modalData.isSaving}
                     className={`flex-1 rounded-lg border-2 px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors disabled:opacity-50 ${modalData.isSaving
-                        ? 'border-gray-300 bg-gray-400 text-gray-700 cursor-not-allowed'
-                        : 'border-green-600 bg-green-600 text-white hover:bg-green-700 focus:ring-green-500'
+                      ? 'border-gray-300 bg-gray-400 text-gray-700 cursor-not-allowed'
+                      : 'border-green-600 bg-green-600 text-white hover:bg-green-700 focus:ring-green-500'
                       }`}
                   >
                     {modalData.isSaving ? 'Guardando...' : 'Guardar'}

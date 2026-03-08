@@ -73,8 +73,9 @@ export function EmployeesListPage() {
                 </label>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-                <div className="overflow-x-auto">
+            {/* Vista Desktop */}
+            <div className="hidden md:block bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+                <div className="overflow-x-auto overflow-y-visible">
                     <table className="w-full text-left border-collapse text-sm">
                         <thead className="bg-slate-800/50 text-slate-300 text-xs uppercase tracking-wider">
                             <tr>
@@ -89,8 +90,13 @@ export function EmployeesListPage() {
                         <tbody className="divide-y divide-slate-800">
                             {filteredEmployees.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
-                                        No se encontraron empleados.
+                                    <td colSpan={6} className="px-4 py-12 text-center text-slate-500">
+                                        <div className="flex flex-col items-center justify-center pt-2">
+                                            <svg className="w-10 h-10 text-slate-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                            No se encontraron empleados.
+                                        </div>
                                     </td>
                                 </tr>
                             ) : (
@@ -166,6 +172,93 @@ export function EmployeesListPage() {
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            {/* Vista Mobile: Cards */}
+            <div className="grid grid-cols-1 gap-4 md:hidden">
+                {filteredEmployees.length === 0 ? (
+                    <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 flex flex-col items-center justify-center text-center shadow-sm">
+                        <svg className="w-12 h-12 text-slate-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <p className="text-slate-400 font-medium text-sm">No se encontraron empleados</p>
+                    </div>
+                ) : (
+                    filteredEmployees.map((emp) => (
+                        <div key={`card-${emp.id}`} className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-4 shadow-sm transition-all">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                    {emp.avatarUrl ? (
+                                        <img src={emp.avatarUrl} alt={emp.name} className="w-11 h-11 rounded-full object-cover border border-slate-700 shadow-sm" />
+                                    ) : (
+                                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500/20 to-blue-600/20 text-blue-500 flex items-center justify-center font-bold border border-blue-500/20 shadow-sm shrink-0">
+                                            {emp.name.charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+                                    <div className="overflow-hidden">
+                                        <h3 className="font-semibold text-slate-200 truncate pr-2">{emp.name}</h3>
+                                        <p className="text-[11px] font-medium text-slate-400 truncate">{emp.email || 'Sin correo registrado'}</p>
+                                    </div>
+                                </div>
+                                <span className={`inline-flex shrink-0 items-center px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-bold ${emp.isActive ? 'bg-green-500/10 text-green-400 border border-green-500/20 shadow-sm' : 'bg-red-500/10 text-red-400 border border-red-500/20 shadow-sm'}`}>
+                                    {emp.isActive ? 'Activo' : 'Inactivo'}
+                                </span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 text-sm bg-slate-950/60 p-3 rounded-lg border border-slate-800/60 shadow-inner">
+                                <div>
+                                    <p className="text-[10px] text-slate-500 mb-0.5 uppercase tracking-wider font-semibold">Departamento</p>
+                                    <p className="text-sm text-slate-300 font-medium truncate">{emp.department || '—'}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[10px] text-slate-500 mb-0.5 uppercase tracking-wider font-semibold">Sueldo / Tipo</p>
+                                    {emp.salaryAmount ? (
+                                        <>
+                                            <p className="text-sm text-slate-200 font-bold truncate">
+                                                {new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG', maximumFractionDigits: 0 }).format(emp.salaryAmount)}
+                                            </p>
+                                            <p className="text-[10px] text-slate-400 font-medium">
+                                                {emp.salaryType === 'MONTHLY' ? 'Mensual' : emp.salaryType === 'WEEKLY' ? 'Semanal' : 'Diario'}
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <p className="text-sm text-slate-500 font-medium">—</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-1">
+                                <button
+                                    onClick={() => navigate(`/main/hr/employees/${emp.id}`)}
+                                    className="flex-1 flex items-center justify-center gap-2 bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg text-sm font-medium transition-colors border border-slate-700 hover:text-white"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                    Editar
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (confirm(`¿Estás seguro que deseas ${emp.isActive ? 'INACTIVAR' : 'ACTIVAR'} a ${emp.name}?`)) {
+                                            toggleStatus.mutate(emp.id)
+                                        }
+                                    }}
+                                    disabled={toggleStatus.isPending}
+                                    className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${emp.isActive ? 'bg-orange-500/10 text-orange-400 border-orange-500/20 hover:bg-orange-500/20 hover:text-orange-300' : 'bg-green-500/10 text-green-400 border-green-500/20 hover:bg-green-500/20 hover:text-green-300'} disabled:opacity-50`}
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        {emp.isActive ? (
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                        ) : (
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        )}
+                                    </svg>
+                                    {emp.isActive ? 'Inactivar' : 'Activar'}
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
         </div>
     )
