@@ -192,7 +192,7 @@ export function EmployeesListPage() {
                                         <img src={emp.avatarUrl} alt={emp.name} className="w-11 h-11 rounded-full object-cover border border-slate-700 shadow-sm" />
                                     ) : (
                                         <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500/20 to-blue-600/20 text-blue-500 flex items-center justify-center font-bold border border-blue-500/20 shadow-sm shrink-0">
-                                            {emp.name.charAt(0).toUpperCase()}
+                                            {(emp.name || emp.firstName || '?').charAt(0).toUpperCase()}
                                         </div>
                                     )}
                                     <div className="overflow-hidden">
