@@ -1,4 +1,4 @@
-import { type JSX, useEffect, useState } from 'react'
+import { type JSX } from 'react'
 import { MdAccessTime } from 'react-icons/md'
 import { PiCurrencyCircleDollarFill } from 'react-icons/pi'
 import { FaUser, FaArrowUp, FaArrowDown } from 'react-icons/fa'
