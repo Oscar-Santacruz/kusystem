@@ -5,8 +5,8 @@ import { Dashboard } from '@uppy/react'
 import XHRUpload from '@uppy/xhr-upload'
 import { FiX } from 'react-icons/fi'
 
-import '@uppy/core/css/style.css'
-import '@uppy/dashboard/css/style.css'
+import '@uppy/core/dist/style.css'
+import '@uppy/dashboard/dist/style.css'
 
 export interface ImageUploaderProps {
   /** URL del endpoint para subir la imagen */

@@ -11,6 +11,7 @@ interface OrgGuardProps {
 }
 
 export function OrgGuard({ children }: OrgGuardProps) {
+  const authDisabled = import.meta.env.VITE_AUTH_DISABLED === 'true'
   const navigate = useNavigate()
   const location = useLocation()
   const orgId = useOrgStore((s) => s.orgId)
@@ -20,8 +21,12 @@ export function OrgGuard({ children }: OrgGuardProps) {
   const setPermissions = usePermissionsStore((s) => s.setPermissions)
   const setIsOwner = usePermissionsStore((s) => s.setIsOwner)
   const resetPermissions = usePermissionsStore((s) => s.reset)
-  const { isAuthenticated, isLoading } = useAuth0()
-  const authReady = useAuthReadyStore((s) => s.isReady)
+  const { isAuthenticated: _isAuthenticated, isLoading: _isLoading } = useAuth0()
+  const _authReady = useAuthReadyStore((s) => s.isReady)
+
+  const isAuthenticated = authDisabled ? true : _isAuthenticated
+  const isLoading = authDisabled ? false : _isLoading
+  const authReady = authDisabled ? true : _authReady
   const resolvingRef = useRef(false)
   const loadingPermsRef = useRef(false)
 

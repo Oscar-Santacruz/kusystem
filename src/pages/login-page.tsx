@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 export function LoginPage() {
+  const authDisabled = import.meta.env.VITE_AUTH_DISABLED === 'true'
   const { isAuthenticated, isLoading, loginWithRedirect } = useAuth0()
   const navigate = useNavigate()
   const location = useLocation() as any
@@ -10,12 +11,12 @@ export function LoginPage() {
   const safeFrom = from === '/login' ? '/main/welcome' : from
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (authDisabled || isAuthenticated) {
       navigate(safeFrom, { replace: true })
     }
-  }, [isAuthenticated, safeFrom, navigate])
+  }, [authDisabled, isAuthenticated, safeFrom, navigate])
 
-  if (isLoading) return <div className="p-6">Cargando…</div>
+  if (isLoading && !authDisabled) return <div className="p-6">Cargando…</div>
 
   return (
     <div className="mx-auto max-w-md p-6">
