@@ -44,8 +44,8 @@ export function QuoteSidebar(props: QuoteSidebarProps): JSX.Element {
           <section className="rounded-lg border border-slate-700/70 bg-slate-900 p-4 shadow-md">
             <div className="text-xs text-slate-300 mb-2">Resumen</div>
             <div className="flex justify-between py-1"><span>Sub-Total</span><span>{fmt(totals?.subtotal)}</span></div>
-            <div className="flex justify-between py-1"><span>IVA</span><span>{fmt(totals?.tax)}</span></div>
             <div className="flex justify-between py-1"><span>Cargos</span><span>{fmt(totals?.charges)}</span></div>
+            <div className="flex justify-between py-1"><span>IVA</span><span>{fmt(totals?.tax)}</span></div>
             <div className="text-xs text-slate-400 mt-1">
               {chargeDetails?.length ? (
                 <div className="flex flex-wrap gap-1">

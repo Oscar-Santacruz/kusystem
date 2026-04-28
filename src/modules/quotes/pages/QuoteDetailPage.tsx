@@ -4,7 +4,7 @@ import { useQuote } from '@/modules/quotes/hooks/useQuotes'
 import { QuotePrint } from '@/modules/quotes/components/QuotePrint'
 import { QuoteStatusActions } from '@/modules/quotes/components/QuoteStatusActions'
 import { useReactToPrint } from 'react-to-print'
-import { FaEdit, FaPrint, FaFilePdf, FaImage, FaWhatsapp, FaArrowLeft, FaLink } from 'react-icons/fa'
+import { FaEdit, FaPrint, FaFilePdf, FaImage, FaWhatsapp, FaArrowLeft, FaLink, FaCopy } from 'react-icons/fa'
 import { getPublicQuoteUrl } from '@/modules/quotes/utils/public-url'
 import { toast } from 'sonner'
 import { useCurrentOrganization } from '@/shared/hooks/useCurrentOrganization'
@@ -105,6 +105,11 @@ export function QuoteDetailPage(): JSX.Element {
     return fmt.format(Number.isFinite(n as number) ? (n as number) : 0)
   }
 
+  const qtFmt = useMemo(() => new Intl.NumberFormat('es-PY', { useGrouping: true, minimumFractionDigits: 0, maximumFractionDigits: 2 }), [])
+  function formatQty(n?: number): string {
+    return qtFmt.format(Number.isFinite(n as number) ? (n as number) : 0)
+  }
+
   function parseLocalDate(value?: string | number | Date): Date {
     if (value == null) return new Date()
     if (value instanceof Date) return value
@@ -198,6 +203,16 @@ export function QuoteDetailPage(): JSX.Element {
             <span className="sr-only">Editar</span>
           </Link>
 
+          <Link
+            to={`/main/quotes/new?cloneId=${id}`}
+            className="inline-flex items-center justify-center rounded bg-indigo-700 text-white hover:bg-indigo-600 h-9 w-9"
+            aria-label="Clonar"
+            title="Clonar"
+          >
+            <FaCopy className="h-4 w-4" aria-hidden="true" />
+            <span className="sr-only">Clonar Presupuesto</span>
+          </Link>
+
           <button
             className="inline-flex items-center justify-center rounded bg-slate-900 text-white hover:bg-slate-800 h-9 w-9"
             onClick={handlePrint}
@@ -275,9 +290,9 @@ export function QuoteDetailPage(): JSX.Element {
       ) : data ? (
         <div className="space-y-6">
           {/* Acciones de estado */}
-          <QuoteStatusActions 
-            quoteId={id!} 
-            currentStatus={data.status} 
+          <QuoteStatusActions
+            quoteId={id!}
+            currentStatus={data.status}
             onStatusChanged={() => refetch()}
           />
 
@@ -322,6 +337,7 @@ export function QuoteDetailPage(): JSX.Element {
                     <th className="px-2 py-2 text-left">#</th>
                     <th className="px-2 py-2 text-left">Descripción</th>
                     <th className="px-2 py-2 text-right">Cantidad</th>
+                    <th className="px-2 py-2 text-center">U.M.</th>
                     <th className="px-2 py-2 text-right">P. unitario</th>
                     <th className="px-2 py-2 text-right">Desc.</th>
                     <th className="px-2 py-2 text-right">IVA</th>
@@ -336,7 +352,8 @@ export function QuoteDetailPage(): JSX.Element {
                       <tr key={idx} className="border-t border-slate-700/60">
                         <td className="px-2 py-2 align-top">{idx + 1}</td>
                         <td className="px-2 py-2 align-top">{it.description}</td>
-                        <td className="px-2 py-2 align-top text-right">{formatPYG(it.quantity)}</td>
+                        <td className="px-2 py-2 align-top text-right">{formatQty(it.quantity)}</td>
+                        <td className="px-2 py-2 align-top text-center">{it.unit || 'UN'}</td>
                         <td className="px-2 py-2 align-top text-right">{formatPYG(it.unitPrice)}</td>
                         <td className="px-2 py-2 align-top text-right">{formatPYG(it.discount ?? 0)}</td>
                         <td className="px-2 py-2 align-top text-right">{ivaPct}%</td>

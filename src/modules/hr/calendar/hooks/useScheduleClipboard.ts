@@ -5,7 +5,7 @@ export interface ClipboardSchedule {
   clockOut?: string
   advance?: number
   overtimeHours?: number
-  dayType?: 'laboral' | 'ausente' | 'libre' | 'no-laboral' | 'feriado'
+  dayType?: 'laboral' | 'ausente' | 'libre' | 'no-laboral' | 'feriado' | 'medio-dia'
 }
 
 export function useScheduleClipboard() {

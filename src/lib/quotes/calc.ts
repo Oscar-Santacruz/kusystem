@@ -18,7 +18,8 @@ export function computeTotals(items: QuoteItem[], additionalCharges: AdditionalC
   const safeCharges = Array.isArray(additionalCharges) ? additionalCharges : []
 
   const subtotal = safeItems.reduce((acc, it) => acc + (Number(it.quantity || 0) * Number(it.unitPrice || 0)), 0)
-  const tax = safeItems.reduce((acc, it) => acc + (Number(it.taxRate || 0) * Number(it.quantity || 0) * Number(it.unitPrice || 0)), 0)
+  const tax = safeItems.reduce((acc, it) => acc + (Number(it.taxRate || 0) * Number(it.quantity || 0) * Number(it.unitPrice || 0)), 0) +
+    safeCharges.reduce((acc, c) => acc + (Number(c.amount || 0) * 0.1), 0)
   const discount = safeItems.reduce((acc, it) => acc + Number(it.discount || 0), 0)
   const charges = safeCharges.reduce((acc, c) => acc + Number(c.amount || 0), 0)
   const total = subtotal + tax + charges - discount

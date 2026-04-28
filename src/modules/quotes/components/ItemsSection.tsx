@@ -13,7 +13,8 @@ export interface ItemsSectionProps {
   }
   // Actions
   onOpenCreateProduct: () => void
-  onAddFromProduct: (p: { id: string; name: string; price: number; taxRate?: number | undefined }) => void
+  onAddFromProduct: (p: { id: string; name: string; price: number; taxRate?: number | undefined; unit?: string }) => void
+  onAddCustomItem: () => void
   onUpdateItem: (index: number, patch: Partial<QuoteItem>) => void
   onRemoveItem: (index: number) => void
   // Reorder (DnD)
@@ -22,6 +23,8 @@ export interface ItemsSectionProps {
   items: QuoteItem[]
   // Utils
   formatPrice: (n: number) => string
+  // Generic product ID for custom items
+  genericProductId?: string
 }
 
 export function ItemsSection(props: ItemsSectionProps): JSX.Element {
@@ -32,11 +35,13 @@ export function ItemsSection(props: ItemsSectionProps): JSX.Element {
     products,
     onOpenCreateProduct,
     onAddFromProduct,
+    onAddCustomItem,
     onUpdateItem,
     onRemoveItem,
     onReorderItems,
     items,
     formatPrice,
+    genericProductId,
   } = props
 
   return (
@@ -51,6 +56,14 @@ export function ItemsSection(props: ItemsSectionProps): JSX.Element {
             onChange={(e) => setProductSearch(e.target.value)}
             placeholder="Buscar producto (nombre, SKU o unidad)…"
           />
+          <button
+            type="button"
+            onClick={onAddCustomItem}
+            className="rounded border border-emerald-600 bg-emerald-950/30 px-3 py-2 text-emerald-300 hover:bg-emerald-950/50 whitespace-nowrap"
+            title="Agregar item con descripción y precio personalizado"
+          >
+            ➕ Item Personalizado
+          </button>
           <button type="button" onClick={onOpenCreateProduct} className="rounded border border-slate-600 px-3 py-2 text-slate-200 hover:bg-slate-800">
             Crear producto
           </button>
@@ -70,7 +83,7 @@ export function ItemsSection(props: ItemsSectionProps): JSX.Element {
                 <button
                   key={p.id}
                   type="button"
-                  onClick={() => onAddFromProduct({ id: p.id, name: p.name, price: p.price, taxRate: p.taxRate ?? undefined })}
+                  onClick={() => onAddFromProduct({ id: p.id, name: p.name, price: p.price, taxRate: p.taxRate ?? undefined, unit: (p as any).unit })}
                   className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-slate-800 focus:bg-slate-800 text-slate-200"
                 >
                   <div className="min-w-0 flex-1">
@@ -106,7 +119,7 @@ export function ItemsSection(props: ItemsSectionProps): JSX.Element {
             <tr>
               <th className="border border-slate-800 px-2 py-2 text-center w-8" title="Arrastra para reordenar" aria-label="Handle" />
               <th className="border border-slate-800 px-3 py-2 text-left w-2/5">Descripción</th>
-              <th className="border border-slate-800 px-3 py-2 text-right w-20">Cantidad</th>
+              <th className="border border-slate-800 px-3 py-2 text-right w-24">Cantidad</th>
               <th className="border border-slate-800 px-3 py-2 text-right w-28">P. Unit</th>
               <th className="border border-slate-800 px-3 py-2 text-right w-28">Total</th>
               <th className="border border-slate-800 px-3 py-2 text-center w-16">Acción</th>
@@ -118,7 +131,7 @@ export function ItemsSection(props: ItemsSectionProps): JSX.Element {
                 key={idx}
                 draggable
                 onDragStart={(e) => {
-                  try { e.dataTransfer.setData('text/plain', String(idx)) } catch {}
+                  try { e.dataTransfer.setData('text/plain', String(idx)) } catch { }
                   // efecto visual
                   e.currentTarget.classList.add('opacity-60')
                 }}
@@ -154,24 +167,46 @@ export function ItemsSection(props: ItemsSectionProps): JSX.Element {
                   </span>
                 </td>
                 <td className="border border-slate-800 px-3 py-2">
-                  <div className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white" title={it.description}>
-                    {it.description}
-                  </div>
+                  {it.productId === genericProductId ? (
+                    <input
+                      type="text"
+                      className="w-full rounded border border-emerald-600 bg-slate-900 px-3 py-2 text-white outline-none focus:ring focus:ring-emerald-500/30"
+                      value={it.description}
+                      onChange={(e) => onUpdateItem(idx, { description: e.target.value })}
+                      placeholder="Descripción del servicio/producto…"
+                    />
+                  ) : (
+                    <div className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-white" title={it.description}>
+                      {it.description}
+                    </div>
+                  )}
                 </td>
                 <td className="border border-slate-800 px-3 py-2 text-right">
                   <input
                     type="number"
                     min={0}
-                    step={1}
+                    step={0.01}
                     className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-right text-white outline-none"
                     value={it.quantity}
-                    onChange={(e) => onUpdateItem(idx, { quantity: Math.max(0, Math.trunc(Number(e.target.value) || 0)) })}
+                    onChange={(e) => onUpdateItem(idx, { quantity: Math.max(0, Number(e.target.value) || 0) })}
                   />
                 </td>
                 <td className="border border-slate-800 px-3 py-2 text-right">
-                  <div className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-right text-white" title={String(it.unitPrice ?? 0)}>
-                    {formatPrice(it.unitPrice ?? 0)}
-                  </div>
+                  {it.productId === genericProductId ? (
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      className="w-full rounded border border-emerald-600 bg-slate-900 px-3 py-2 text-right text-white outline-none focus:ring focus:ring-emerald-500/30"
+                      value={it.unitPrice ?? 0}
+                      onChange={(e) => onUpdateItem(idx, { unitPrice: Math.max(0, Number(e.target.value) || 0) })}
+                      placeholder="Precio…"
+                    />
+                  ) : (
+                    <div className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-right text-white" title={String(it.unitPrice ?? 0)}>
+                      {formatPrice(it.unitPrice ?? 0)}
+                    </div>
+                  )}
                 </td>
                 <td className="border border-slate-800 px-3 py-2 text-right font-medium">
                   {formatPrice(it.quantity * it.unitPrice)}
